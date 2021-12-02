@@ -1,0 +1,57 @@
+#+TITLE: Unused Configs
+
+
+**** org-msg email in org mode
+#+BEGIN_SRC emacs-lisp
+(use-package! org-msg :ensure t)
+#+END_SRC
+
+*** neotree
+#+BEGIN_SRC emacs-lisp
+(use-package neotree
+  :after
+  projectile
+  :commands
+  (neotree-show neotree-hide neotree-dir neotree-find)
+  :custom
+  (neo-theme 'arrow)
+  :bind
+  ("<f8>" . neotree-current-dir-toggle)
+  ("<f9>" . neotree-projectile-toggle)
+  :preface
+  (defun neotree-projectile-toggle ()
+    (interactive)
+    (let ((project-dir
+           (ignore-errors
+           ;;; Pick one: projectile or find-file-in-project
+             (projectile-project-root)
+             ))
+          (file-name (buffer-file-name))
+          (neo-smart-open t))
+      (if (and (fboundp 'neo-global--window-exists-p)
+               (neo-global--window-exists-p))
+          (neotree-hide)
+        (progn
+          (neotree-show)
+          (if project-dir
+              (neotree-dir project-dir))
+          (if file-name
+              (neotree-find file-name))))))
+  (defun neotree-current-dir-toggle ()
+    (interactive)
+    (let ((project-dir
+           (ignore-errors
+             (ffip-project-root)
+             ))
+          (file-name (buffer-file-name))
+          (neo-smart-open t))
+      (if (and (fboundp 'neo-global--window-exists-p)
+               (neo-global--window-exists-p))
+          (neotree-hide)
+        (progn
+          (neotree-show)
+          (if project-dir
+              (neotree-dir project-dir))
+          (if file-name
+              (neotree-find file-name)))))))
+#+END_SRC

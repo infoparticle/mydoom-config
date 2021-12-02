@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Title
+# key: T
+# --
+#+TITLE: $1
+Last Saved: "Nov 11 Wed, 2020"
+
+*** Table of contents                                                                   :TOC_7:
+
+$0
