@@ -78,6 +78,8 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (plantuml . t)
 (gnuplot . t)
 (haskell . t)
+(java . t)
+(dot . t)
 (sql . t)))
 
 ;; avoid tangling into dos eol in linux files edited using tramp
@@ -245,9 +247,9 @@ a separator ' -> '."
   (org-insert-heading)
   (insert (concat (read-string (format"Enter Image Header (%s): " myvar/img-name) nil nil  (concat (format-time-string "%Y-%m-%d"))) "\n"))
   ;;(insert "\n[[file:" (url-encode-url myvar/relative-filename) "]]" "\n")
-  (insert "\n[[file:"  myvar/relative-filename "]]" "\n"))
+  (insert "#+ATTR_ORG: :width 600\n[[file:"  myvar/relative-filename "]]" "\n"))
 
-(defun org-screenshot ()
+(defun my/org-screenshot ()
   "Take a screenshot into a time stamped unique-named file in the
  sub-directory (%filenameIMG) as the org-buffer and insert a link to this file."
   (interactive)
@@ -263,4 +265,23 @@ a separator ' -> '."
   (org-display-inline-images))
 
 
-(global-set-key [f5] 'org-screenshot)
+(global-set-key [f5] 'my/org-screenshot)
+
+(setq org-roam-directory "c:/my/org-roam")
+
+(use-package! websocket
+    :after org-roam)
+
+(use-package! org-roam-ui
+    :after org-roam ;; or :after org
+;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
+;;         a hookable mode anymore, you're advised to pick something yourself
+;;         if you don't care about startup time, use
+;;  :hook (after-init . org-roam-ui-mode)
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start t))
+
+(use-package! skeletor)

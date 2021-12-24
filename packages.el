@@ -63,3 +63,10 @@
                        :repo "toshism/org-super-links"
                        :files ("*.el")
                        ))
+
+(unpin! org-roam)
+(package! org-roam-ui)
+
+;; ~/.doom.d/package.el
+(package! org-transclusion)
+(package! skeletor)
