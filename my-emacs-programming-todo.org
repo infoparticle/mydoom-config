@@ -1,0 +1,18 @@
+#+TITLE: My Emacs Todo
+
+* Emacs
+
+** TODO master todo
+
+https://xenodium.com/emacs-tips-backlog/
+
+** TODO learn elisp
+
+https://caiorss.github.io/Emacs-Elisp-Programming/Elisp_Snippets.html
+https://www.math.utah.edu/docs/info/emacs-lisp-intro_toc.html
+
+* Programming
+
+** TODO programming idioms
+
+https://www.programming-idioms.org/cheatsheet/Java

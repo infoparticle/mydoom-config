@@ -70,17 +70,31 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 
 (add-hook 'before-save-hook 'time-stamp)  ; update time stamps when saving
 
+;; https://emacs.stackexchange.com/questions/62720/open-org-link-in-the-same-window
+(after! org
+(setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
+
 (org-babel-do-load-languages
 'org-babel-load-languages
 '((python . t)
 (shell . t)
 (ledger . t)
 (plantuml . t)
+(napkin . t)
 (gnuplot . t)
 (haskell . t)
 (java . t)
 (dot . t)
 (sql . t)))
+
+(use-package! ob-napkin :ensure t
+              :init
+              (with-eval-after-load 'ob
+  ;; Optional for syntax highlight of napkin-puml src block.
+  ;; (require 'plantuml)
+  (require 'ob-napkin)))
+
+(setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/.local/jars/plantuml.jar"))
 
 ;; avoid tangling into dos eol in linux files edited using tramp
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
@@ -283,5 +297,36 @@ a separator ' -> '."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
+
+(use-package! super-save
+  :ensure t
+  :config
+  (setq super-save-auto-save-when-idle t)
+  (setq auto-save-default nil)
+  (setq super-save-remote-files nil)
+  (setq super-save-exclude '(".gpg"))
+  (add-to-list 'super-save-hook-triggers 'find-file-hook)
+  (super-save-mode +1))
+
+(setq dired-recursive-copies (quote always)) ;no asking
+(setq dired-recursive-deletes (quote top)) ; ask once
+(setq dired-dwim-target t)
+
+;hide details
+(defun xah-dired-mode-setup ()
+  "to be run as hook for `dired-mode'."
+  (dired-hide-details-mode 1))
+(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+
+(define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file) ; was dired-advertised-find-file
+
+; put directories first
+(setq ls-lisp-dirs-first t)
+(setq dired-recursive-deletes 'top)
+(setq dired-listing-switches "-hal")
+(setq diredp-hide-details-initially-flag nil)
+
+(doom-themes-neotree-config)
+(setq doom-themes-neotree-file-icons t)
 
 (use-package! skeletor)

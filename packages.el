@@ -70,3 +70,5 @@
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
 (package! skeletor)
+(package! ob-napkin)
+(package! super-save)
