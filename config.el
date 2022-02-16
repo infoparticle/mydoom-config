@@ -40,8 +40,8 @@
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type t)
-
+(setq display-line-numbers-type nil)
+(tab-bar-mode)
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
@@ -71,8 +71,10 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (add-hook 'before-save-hook 'time-stamp)  ; update time stamps when saving
 
 ;; https://emacs.stackexchange.com/questions/62720/open-org-link-in-the-same-window
+;; https://emacs.stackexchange.com/questions/16652/change-the-behavior-of-org-mode-auto-expand-relative-path-in-link
 (after! org
-(setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
+  (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
+  (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -330,3 +332,89 @@ a separator ' -> '."
 (setq doom-themes-neotree-file-icons t)
 
 (use-package! skeletor)
+
+(defun my/get-gist ()
+  (interactive)
+  (find-file "~/.doom.d/code-gists/my-code-gists.org")
+  (counsel-org-goto)
+  (search-forward "#+begin_src")
+  (org-edit-src-code)
+  (clipboard-kill-region (point-min) (point-max))
+  (org-edit-src-abort)
+  (kill-buffer)
+  (yank))
+
+(with-eval-after-load 'counsel
+  (when (eq system-type 'windows-nt)
+    (setq counsel-locate-cmd 'counsel-locate-cmd-es)
+    (defun counsel-locate-cmd-es (input)
+      "Return a shell command based on INPUT."
+      (format "c:/opt/localbin/es.exe  -p -r %s"
+              (counsel--elisp-to-pcre
+               (ivy--regex input t))))))
+
+(map! :leader
+      :desc "New journal entry"
+      "o w" #'my/pick-wiki-name)
+
+(setq wiki-root "C:\\Users\\gopinat\\Dropbox\\emacs-apps\\wikis")
+
+(defun my/pick-wiki-name-action-list-candidates (str pred _)
+  (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                 (directory-files wiki-root))))
+(defun my/open-wiki (wiki-root wiki-name)
+  (if(file-directory-p wiki-root)
+      (progn
+        ;(persp-mode t)
+        ;(persp-frame-switch wiki-name)
+        (delete-other-windows)
+        (find-file  (concat wiki-root "/" wiki-name "/contents/index.org"))
+        (split-window-right 30)
+        (find-file-other-window (concat wiki-root "/" wiki-name "/tmp/" wiki-name "-" "inbox.org"))
+        (when (file-exists-p  (concat wiki-root "/" ".config.el"))
+          (load-file  (concat wiki-root "/" ".config.el"))))
+    (message "Wiki not found %s" wiki-root)))
+
+(defun my/pick-wiki-name-action (x)
+  (my/open-wiki  wiki-root x))
+
+(defun my/pick-wiki-name ()
+  "pick a wiki from dropbox folder."
+  (interactive)
+  (ivy-read "List of wikis: "  #'my/pick-wiki-name-action-list-candidates
+            :preselect (ivy-thing-at-point)
+            :require-match t
+            :action #'my/pick-wiki-name-action
+            :caller 'my/pick-wiki-name))
+
+(defun replace-garbage-chars ()
+"Replace non-rendering MS and other garbage characters with latin1 equivalents."
+(interactive)
+(save-excursion             ;save the current point
+(replace-string "\221" "`" nil (point-min) (point-max))
+(replace-string "\222" "'" nil (point-min) (point-max))
+(replace-string "\226" "-" nil (point-min) (point-max))
+(replace-string "\227" "--" nil (point-min) (point-max))
+(replace-string "\223" "(" nil (point-min) (point-max))
+(replace-string "\224" ")" nil (point-min) (point-max))
+(replace-string "\205" "..." nil (point-min) (point-max))
+(replace-string "\225" "-" nil (point-min) (point-max))
+(replace-string "\344" "" nil (point-min) (point-max))
+(replace-string "\374" "" nil (point-min) (point-max))
+(replace-string "\337" "" nil (point-min) (point-max))
+(replace-string "\366" "" nil (point-min) (point-max))
+(replace-string "\247" "***" nil (point-min) (point-max))
+(replace-string "\267" "****" nil (point-min) (point-max))
+(replace-string "\351" "é" nil (point-min) (point-max))
+(replace-string "\347" "ç" nil (point-min) (point-max))
+(replace-string "\352" "ê" nil (point-min) (point-max))
+(replace-string "\342" "â" nil (point-min) (point-max))
+(replace-string "\307" "Ç" nil (point-min) (point-max))
+(replace-string "\340" "à" nil (point-min) (point-max))
+(replace-string "\340" "à" nil (point-min) (point-max))
+(replace-string "\364" "ô" nil (point-min) (point-max))
+(replace-string "\353" "ë" nil (point-min) (point-max))
+(replace-string "\243" "£" nil (point-min) (point-max))
+));end replace-garbage-characters
+;bind-key replace-garbage-characters
+(bind-key  "\C-cr"  'replace-garbage-chars)
