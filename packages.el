@@ -72,3 +72,4 @@
 (package! skeletor)
 (package! ob-napkin)
 (package! super-save)
+(package! dired-sidebar)

@@ -261,9 +261,9 @@ a separator ' -> '."
   (setq file-name-without-full-path (my/clean-spaces-from-path (file-name-nondirectory buffer-file-name)))
   (setq myvar/relative-filename (concat "./.imgs/" file-name-without-full-path "/" myvar/img-name))
   (org-insert-heading)
-  (insert (concat (read-string (format"Enter Image Header (%s): " myvar/img-name) nil nil  (concat (format-time-string "%Y-%m-%d"))) "\n"))
+  (insert (concat (read-string (format"Enter Image Header (%s): " myvar/img-name) nil nil  (concat (format-time-string "%Y-%m-%d %H:%M:%S"))) "\n"))
   ;;(insert "\n[[file:" (url-encode-url myvar/relative-filename) "]]" "\n")
-  (insert "#+ATTR_ORG: :width 600\n[[file:"  myvar/relative-filename "]]" "\n"))
+  (insert "#+ATTR_ORG: :width 900\n[[file:"  myvar/relative-filename "]]" "\n"))
 
 (defun my/org-screenshot ()
   "Take a screenshot into a time stamped unique-named file in the
@@ -328,8 +328,27 @@ a separator ' -> '."
 (setq dired-listing-switches "-hal")
 (setq diredp-hide-details-initially-flag nil)
 
-(doom-themes-neotree-config)
-(setq doom-themes-neotree-file-icons t)
+(use-package dired-sidebar
+  :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
+  :ensure t
+  :commands (dired-sidebar-toggle-sidebar)
+  :init
+  (add-hook 'dired-sidebar-mode-hook
+            (lambda ()
+              (unless (file-remote-p default-directory)
+                (auto-revert-mode))))
+  :config
+  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
+  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
+
+  (setq dired-sidebar-subtree-line-prefix "  ")
+  (setq dired-sidebar-theme 'ascii)
+  ;(setq dired-sidebar-theme 'icons) ;not working
+  (setq dired-sidebar-use-term-integration t)
+  (setq dired-sidebar-use-custom-font t))
+
+;(doom-themes-neotree-config)
+;(setq doom-themes-neotree-file-icons t)
 
 (use-package! skeletor)
 
@@ -387,7 +406,7 @@ a separator ' -> '."
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
-(defun replace-garbage-chars ()
+(defun my/replace-garbage-chars ()
 "Replace non-rendering MS and other garbage characters with latin1 equivalents."
 (interactive)
 (save-excursion             ;save the current point
