@@ -1,0 +1,54 @@
+# -*- mode: snippet -*-
+# name: trading-checklist
+# uuid:
+# key: tc
+# condition: t
+# --
+
+
+**  Todays focus
+
+- Avoid FOMO
+- Get best execution prices
+- cut down churn hold longer
+- Focus on process not PNL, it's okay to be in loss after following process!
+
+** Premarket
+
+*Marking*
+
+- [ ] Mark the hourly and 5 mins chart (wedges, DT/DB, special bars)
+- [ ] Generate hypos and align to big cycle
+  - [ ] Form hypos from global markets
+
+*Risk*
+
+- [ ] per day risk based on volatility in points
+
+| Risk cut off for today | 10 points    |
+| Profit target          | 15-20 points |
+
+** Live - On going
+
+- [ ] Update the hypos
+  - [ ] Assess and mark charts every 10 mins
+  - [ ] Multi chart market data updates
+
+- [ ] Mark no trade zones too and best price/reasons
+
+
+* Hypos
+
+** long hypos
+
+** short hypos
+
+** neutral hypos
+
+** IV Hypos
+
+|   | Trade                 | Reason                                                       |
+|---+-----------------------+--------------------------------------------------------------|
+| 1 | Sell the call on open | Market crashed at night CEs will be FOMOing out of position, |
+|   |                       | can sell the FOMO at higher price!                           |
+|   |                       | later markets will cool off giving good points!              |

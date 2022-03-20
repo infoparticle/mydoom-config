@@ -73,6 +73,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 ;; https://emacs.stackexchange.com/questions/62720/open-org-link-in-the-same-window
 ;; https://emacs.stackexchange.com/questions/16652/change-the-behavior-of-org-mode-auto-expand-relative-path-in-link
 (after! org
+  (setq org-hide-emphasis-markers t)
   (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
@@ -283,6 +284,33 @@ a separator ' -> '."
 
 (global-set-key [f5] 'my/org-screenshot)
 
+(setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
+(defun my/chartgallery/add-entry-to-index(it)
+  (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
+  (end-of-buffer)
+  (org-insert-heading)
+  (insert (read-string "Enter comments for the screenshot :"
+                              (concat (format-time-string "%Y-%m-%d-%a-"))))
+  (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
+  (org-display-inline-images))
+
+
+(defun my/save-screenshot-to-chart-gallery()
+  (interactive)
+  (setq screenshot-file-name
+        (concat (my/clean-spaces-from-path
+                 (read-string "Enter file name :"
+                              (concat (format-time-string "%Y-%m-%d-%a-"))))
+                ".png"))
+  (setq chart-gallery-path
+        (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
+  (make-directory chart-gallery-path :parents)
+  (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
+
+  (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
+  (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
+  (my/chartgallery/add-entry-to-index myvar/relative-filename))
+
 (setq org-roam-directory "c:/my/org-roam")
 
 (use-package! websocket
@@ -406,6 +434,20 @@ a separator ' -> '."
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
+(defun my/create-trading-journal-entry ()
+  (interactive)
+  (setq trade-journal-dir
+        (concat
+        "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/contents/trading/journal/2022/"
+         (format-time-string "%Y-%m-%b/")))
+  (setq myvar/file-name
+        (concat (my/clean-spaces-from-path
+                 (read-string "Enter Coments for the day :"
+                              (concat (format-time-string "%y%m%d-%a-")) nil  nil))
+                ".org"))
+
+  (find-file (concat trade-journal-dir myvar/file-name)))
+
 (defun my/replace-garbage-chars ()
 "Replace non-rendering MS and other garbage characters with latin1 equivalents."
 (interactive)
@@ -437,3 +479,32 @@ a separator ' -> '."
 ));end replace-garbage-characters
 ;bind-key replace-garbage-characters
 (bind-key  "\C-cr"  'replace-garbage-chars)
+
+(setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
+
+(defun my/work/open-file-in-sidebar (it)
+  (split-window-right)
+  (find-file (concat myvar/rum-work-notes-path it)))
+
+(defun my/work/open-todo ()
+  (interactive)
+  (my/work/open-file-in-sidebar "contents/private/todo-for-today.org"))
+(bind-key  "\C-cwot"  'my/work/open-todo)
+
+(defun my/work/open-bookmarks ()
+  (interactive)
+  (my/work/open-file-in-sidebar "contents/bookmarks.org"))
+(bind-key  "\C-cwob"  'my/work/open-bookmarks)
+
+
+(defun my/work/task/create ()
+  (interactive)
+  (setq myvar/task-dir
+        (concat (my/clean-spaces-from-path
+                 (read-string "Enter Task for the day :"
+                              (concat (format-time-string "%Y-%m-%d-")) nil  nil))
+                ".task/"))
+  (make-directory (concat myvar/rum-work-notes-path "contents/private/tasks/" myvar/task-dir) :parents)
+  (find-file (concat myvar/rum-work-notes-path "contents/private/tasks/" myvar/task-dir "index.org")))
+
+(bind-key  "\C-cwtc"  'my/work/task/create)

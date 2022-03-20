@@ -73,3 +73,4 @@
 (package! ob-napkin)
 (package! super-save)
 (package! dired-sidebar)
+(package! zk)
