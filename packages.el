@@ -74,3 +74,6 @@
 (package! super-save)
 (package! dired-sidebar)
 (package! zk)
+
+;; coding
+(package! ivy-yasnippet)

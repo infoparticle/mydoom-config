@@ -31,7 +31,8 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-one-light)
+;;(setq doom-theme 'doom-one-light)
+(setq doom-theme 'doom-zenburn)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
@@ -286,30 +287,37 @@ a separator ' -> '."
 
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)
-  (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
-  (end-of-buffer)
-  (org-insert-heading)
-  (insert (read-string "Enter comments for the screenshot :"
-                              (concat (format-time-string "%Y-%m-%d-%a-"))))
-  (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
-  (org-display-inline-images))
+  (save-excursion
+    (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
+    (end-of-buffer)
+    (org-insert-heading)
+    (insert (read-string "Enter comments for the screenshot :"
+                         (concat (format-time-string "%Y-%m-%d-%a-"))))
+    (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
+    (org-display-inline-images))
+  )
 
 
 (defun my/save-screenshot-to-chart-gallery()
   (interactive)
-  (setq screenshot-file-name
-        (concat (my/clean-spaces-from-path
-                 (read-string "Enter file name :"
-                              (concat (format-time-string "%Y-%m-%d-%a-"))))
-                ".png"))
-  (setq chart-gallery-path
-        (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
-  (make-directory chart-gallery-path :parents)
-  (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
+  (save-excursion
+    (setq screenshot-file-name
+          (concat (my/clean-spaces-from-path
+                   (read-string "Enter file name :"
+                                (concat (format-time-string "%Y-%m-%d-%a-"))))
+                  ".png"))
+    (setq chart-gallery-path
+          (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
+    (make-directory chart-gallery-path :parents)
+    (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
 
-  (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
-  (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
-  (my/chartgallery/add-entry-to-index myvar/relative-filename))
+    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
+    (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
+    (my/chartgallery/add-entry-to-index myvar/relative-filename)
+    (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
+    (org-display-inline-images)
+    )
+  )
 
 (setq org-roam-directory "c:/my/org-roam")
 
@@ -327,6 +335,20 @@ a separator ' -> '."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
+
+(setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
+
+;; "en_US" is key to lookup in `ispell-local-dictionary-alist`, please note it will be passed   to hunspell CLI as "-d" parameter
+(setq ispell-local-dictionary "en_US")
+
+(setq ispell-hunspell-dict-paths-alist
+      '(("en_US" "C:/opt/hunspell/dict/en_US.aff")))
+
+(setq ispell-local-dictionary "en_US")
+(setq ispell-local-dictionary-alist
+      '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
+
+(setq text-mode-hook '(lambda() (flyspell-mode t)))
 
 (use-package! super-save
   :ensure t
@@ -390,6 +412,109 @@ a separator ' -> '."
   (org-edit-src-abort)
   (kill-buffer)
   (yank))
+
+(defun info-mode ()
+  (interactive)
+  (let ((file-name (buffer-file-name)))
+    (kill-buffer (current-buffer))
+    (info file-name)))
+(add-to-list 'auto-mode-alist '("\\.info\\'" . info-mode))
+
+(setq infodir-root "~/.doom.d/my-info-references/info-files/")
+
+(defun my/pick-infodir-name-action-list-candidates (str pred _)
+  (setq infodir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                 (directory-files infodir-root))))
+(defun my/pick-infodir-name-action (x)
+  (info  (concat infodir-root x)))
+
+(defun my/pick-infodir-name ()
+  "pick a wiki from dropbox folder."
+  (interactive)
+  (ivy-read "List of info files: "  #'my/pick-infodir-name-action-list-candidates
+            :preselect (ivy-thing-at-point)
+            :require-match t
+            :action #'my/pick-infodir-name-action
+            :caller 'my/pick-infodir-name))
+
+(map! :leader
+      :desc "Pick an info file"
+      "o i" #'my/pick-infodir-name)
+
+(use-package ivy-yasnippet
+  :bind ("C-c y" . ivy-yasnippet))
+
+(setq JAVA_BASE "c:/opt/jdks")
+
+;;
+;; This function returns the list of installed
+;;
+(defun switch-java--versions ()
+  "Return the list of installed JDK."
+  (seq-remove
+   (lambda (a) (or (equal a ".") (equal a "..")))
+   (directory-files JAVA_BASE)))
+
+
+(defun switch-java--save-env ()
+  "Store original PATH and JAVA_HOME."
+  (when (not (boundp 'SW_JAVA_PATH))
+    (setq SW_JAVA_PATH (getenv "PATH")))
+  (when (not (boundp 'SW_JAVA_HOME))
+    (setq SW_JAVA_HOME (getenv "JAVA_HOME")))
+  (when (not (boundp 'SW_EXEC_PATH))
+    (setq SW_EXEC_PATH exec-path))
+  )
+
+
+(defun switch-java ()
+  "List the installed JDKs and enable to switch the JDK in use."
+  (interactive)
+  ;; store original PATH and JAVA_HOME
+  (switch-java--save-env)
+
+  (let ((ver (completing-read
+              "Which Java: "
+              (seq-map-indexed
+               (lambda (e i) (list e i)) (switch-java--versions))
+              nil t "")))
+    ;; switch java version
+    (setenv "JAVA_HOME" (concat JAVA_BASE "/" ver ))
+    (setenv "PATH" (concat (concat (getenv "JAVA_HOME") "/bin")
+                           ";" SW_JAVA_PATH))
+    (setq exec-path (append (list (concat JAVA_BASE "/" ver "/bin" )) SW_EXEC_PATH)))
+  ;; show version
+  (switch-java-which-version?))
+
+
+(defun switch-java-default ()
+  "Restore the default Java version."
+  (interactive)
+  ;; store original PATH and JAVA_HOME
+  (switch-java--save-env)
+
+  ;; switch java version
+  (setenv "JAVA_HOME" SW_JAVA_HOME)
+  (setenv "PATH" SW_JAVA_PATH)
+  (setq exec-path SW_EXEC_PATH)
+  ;; show version
+  (switch-java-which-version?))
+
+
+(defun switch-java-which-version? ()
+  "Display the current version selected Java version."
+  (interactive)
+  ;; displays current java version
+  (message (concat "JAVA_HOME : " (getenv "JAVA_HOME"))))
+
+
+(defun powershell (&optional buffer)
+  "Launches a powershell in buffer *powershell* and switches to it."
+  (interactive)
+  (let ((buffer (or buffer "*powershell*"))
+    (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
+    (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
+    (switch-to-buffer buffer)))
 
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
@@ -469,7 +594,7 @@ a separator ' -> '."
 (replace-string "\351" "é" nil (point-min) (point-max))
 (replace-string "\347" "ç" nil (point-min) (point-max))
 (replace-string "\352" "ê" nil (point-min) (point-max))
-(replace-string "\342" "â" nil (point-min) (point-max))
+(replace-string "\  342" "â" nil (point-min) (point-max))
 (replace-string "\307" "Ç" nil (point-min) (point-max))
 (replace-string "\340" "à" nil (point-min) (point-max))
 (replace-string "\340" "à" nil (point-min) (point-max))
@@ -479,6 +604,127 @@ a separator ' -> '."
 ));end replace-garbage-characters
 ;bind-key replace-garbage-characters
 (bind-key  "\C-cr"  'replace-garbage-chars)
+
+(defun set-proxy()
+  (interactive)
+  (setq url-proxy-services
+        '(("no_proxy" . "^\\(localhost\\|10.*\\)")
+          ("http" . "15.122.63.30:8080")
+          ("https" . "15.122.63.30:8080"))))
+
+(defun unset-proxy()
+  (interactive)
+  (setq url-proxy-services nil)
+  (setenv "HTTP_PROXY" "")
+  (setenv "HTTPS_PROXY" "")
+)
+
+(defun server-shutdown ()
+"Save buffers, Quit, and Shutdown (kill) server"
+(interactive)
+(save-some-buffers)
+(kill-emacs)
+)
+
+(defun my/byte-compile-init-dir ()
+  "Byte-compile all your dotfiles."
+  (interactive)
+  (byte-recompile-directory (concat user-emacs-directory "config/elispfiles/") 0))
+
+(defun gs/volatile-kill-buffer ()
+  "Kill current buffer unconditionally."
+  (interactive)
+  (let ((buffer-modified-p nil))
+    (kill-buffer (current-buffer))
+    (delete-window)))
+
+(global-set-key (kbd "C-x k") 'gs/volatile-kill-buffer)
+
+(defun gs/find-file-reuse-buffer ()
+  "find file and close previous file"
+  (interactive)
+  (save-buffer)
+  (counsel-find-file)
+  (kill-buffer (previous-buffer)))
+(global-set-key (kbd "C-x C-f") 'gs/find-file-reuse-buffer)
+
+(defun gs/vsplit-previous-buff ()
+  "find file and close previous file"
+  (interactive)
+  (split-window-vertically)
+  (other-window 1 nil)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+(global-set-key (kbd "C-x 2")   'gs/vsplit-previous-buff)
+
+(defun gs/hsplit-previous-buff ()
+  "find file and close previous file"
+  (interactive)
+  (split-window-horizontally)
+  (other-window 1 nil)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+(global-set-key (kbd "C-x 3")   'gs/hsplit-previous-buff)
+
+(defun my/kill-other-buffers ()
+  "Kill all other buffers."
+  (interactive)
+  (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
+
+;; https://github.com/magnars/.emacs.d/blob/master/defuns/buffer-defuns.el
+(require 'cl)
+
+(defun my/rotate-windows (count)
+  "Rotate your windows.
+Dedicated windows are left untouched. Giving a negative prefix
+argument makes the windows rotate backwards."
+  (interactive "p")
+  (let* ((non-dedicated-windows (remove-if 'window-dedicated-p (window-list)))
+         (num-windows (length non-dedicated-windows))
+         (i 0)
+         (step (+ num-windows count)))
+    (cond ((not (> num-windows 1))
+           (message "You can't rotate a single window!"))
+          (t
+           (dotimes (counter (- num-windows 1))
+             (let* ((next-i (% (+ step i) num-windows))
+
+                    (w1 (elt non-dedicated-windows i))
+                    (w2 (elt non-dedicated-windows next-i))
+
+                    (b1 (window-buffer w1))
+                    (b2 (window-buffer w2))
+
+                    (s1 (window-start w1))
+                    (s2 (window-start w2)))
+               (set-window-buffer w1 b2)
+               (set-window-buffer w2 b1)
+               (set-window-start w1 s2)
+               (set-window-start w2 s1)
+               (setq i next-i)))))))
+
+(defun my/toggle-window-split ()
+  (interactive)
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+             (next-win-buffer (window-buffer (next-window)))
+             (this-win-edges (window-edges (selected-window)))
+             (next-win-edges (window-edges (next-window)))
+             (this-win-2nd (not (and (<= (car this-win-edges)
+                                         (car next-win-edges))
+                                     (<= (cadr this-win-edges)
+                                         (cadr next-win-edges)))))
+             (splitter
+              (if (= (car this-win-edges)
+                     (car (window-edges (next-window))))
+                  'split-window-horizontally
+                'split-window-vertically)))
+        (delete-other-windows)
+        (let ((first-win (selected-window)))
+          (funcall splitter)
+          (if this-win-2nd (other-window 1))
+          (set-window-buffer (selected-window) this-win-buffer)
+          (set-window-buffer (next-window) next-win-buffer)
+          (select-window first-win)
+          (if this-win-2nd (other-window 1))))))
 
 (setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
 

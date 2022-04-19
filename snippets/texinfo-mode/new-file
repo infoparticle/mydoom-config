@@ -1,0 +1,55 @@
+# -*- mode: snippet -*-
+# name: new-file
+# uuid:
+# key: ,nf
+# condition: t
+# --
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename ${1}
+@settitle ${2}
+@documentencoding UTF-8
+@documentlanguage en
+@c %**end of header
+
+
+@finalout
+@titlepage
+@title ${3}
+@author Gopinath Sadasivam
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top ${4}
+@end ifnottex
+
+@menu
+* Introduction::
+* Getting started::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Installation
+
+* Installing from Emacs Package Manager::
+* Installing from the Git repository::
+
+@end detailmenu
+@end menu
+
+$0
+
+
+
+@node Concept Index
+@chapter Concept Index
+@printindex ci
+
+@bye
