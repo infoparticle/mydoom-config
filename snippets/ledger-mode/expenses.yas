@@ -1,6 +1,0 @@
-# -*- mode: snippet -*-
-# name: expenses
-# key: .e
-# --
-`(format-time-string "%Y-%m-%d")`  $1
-    Expenses:$0           $2 INR

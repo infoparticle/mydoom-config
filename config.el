@@ -1,3 +1,11 @@
+(defmacro with-system (type &rest body)
+  "Evaluate BODY if `system-type' equals TYPE.
+   usage: (with-system windows-nt  <code> )
+        : (with-system gnu/linux  <code> ) "
+  (declare (indent defun))
+  `(when (eq system-type ',type)
+     ,@body))
+
 ;;; $DOOMDIR/config.el -*- lexical-binding: t; -*-
 
 ;; Place your private configuration here! Remember, you do not need to run 'doom
@@ -155,9 +163,17 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 
                       ))))
 
+(global-set-key (kbd "C-c a") 'org-agenda-list)
+
 (setq org-agenda-inhibit-startup t) ;; ~50x speedup
 (setq org-agenda-use-tag-inheritance nil) ;; 3-4x speedup
+(setq org-agenda-use-time-grid t
+      org-agenda-timegrid-use-ampm t)
 
+(setq org-agenda-prefix-format '((agenda . " %i %-12:c%?-12t%-6e% s")
+                                (todo . " %i %-12:c %-6e")
+                                (tags . " %i %-12:c")
+                                (search . " %i %-12:c")))
 (setq org-todo-keywords
     (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
             (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "MEETING" "EVENT"))))
@@ -185,6 +201,90 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (setq
  cfw:display-calendar-holidays nil ;don't process holidays.el and clutter the agenda
  cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap)
+
+(require 'org-crypt)
+(org-crypt-use-before-save-magic)
+(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+;; GPG key to use for encryption
+;; Either the Key ID or set to nil to use symmetric encryption.
+(setq org-crypt-key nil)
+
+(use-package! org-super-agenda
+  :commands org-super-agenda-mode)
+
+(after! org-agenda
+  (org-super-agenda-mode))
+
+(setq org-agenda-sorting-strategy '((agenda time-up deadline-down scheduled-down habit-down priority-down category-keep)
+ (todo priority-down category-keep)
+ (tags priority-down category-keep)))
+
+(setq org-agenda-skip-scheduled-if-done t
+      org-agenda-skip-deadline-if-done t
+      org-agenda-include-deadlines t
+      org-agenda-block-separator nil
+      org-agenda-tags-column 100 ;; from testing this seems to be a good value
+      org-agenda-compact-blocks t)
+
+(setq org-agenda-custom-commands
+      '(("o" "Overview"
+         ((agenda "" ((org-agenda-span 'day)
+                      (org-super-agenda-groups
+                       '((:name "Today"
+                          :time-grid t
+                          :date today
+                          :todo "TODAY"
+                          :scheduled today
+                          :order 1)))))
+          (alltodo "" ((org-agenda-overriding-header "")
+                       (org-super-agenda-groups
+                        '((:name "Next to do"
+                           :todo "NEXT"
+                           :order 1)
+                          (:name "Important"
+                           :tag "Important"
+                           :priority "A"
+                           :order 6)
+                          (:name "Due Today"
+                           :deadline today
+                           :order 2)
+                          (:name "Due Soon"
+                           :deadline future
+                           :order 8)
+                          (:name "Overdue"
+                           :deadline past
+                           :face error
+                           :order 7)
+                          (:name "Assignments"
+                           :tag "Assignment"
+                           :order 10)
+                          (:name "Issues"
+                           :tag "Issue"
+                           :order 12)
+                          (:name "Emacs"
+                           :tag "Emacs"
+                           :order 13)
+                          (:name "Projects"
+                           :tag "Project"
+                           :order 14)
+                          (:name "Research"
+                           :tag "Research"
+                           :order 15)
+                          (:name "To read"
+                           :tag "Read"
+                           :order 30)
+                          (:name "Waiting"
+                           :todo "WAITING"
+                           :order 20)
+                          (:name "University"
+                           :tag "uni"
+                           :order 32)
+                          (:name "Trivial"
+                           :priority<= "E"
+                           :tag ("Trivial" "Unimportant")
+                           :todo ("SOMEDAY" )
+                           :order 90)
+                          (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
 
 (use-package! atomic-chrome :ensure t)
 
@@ -242,6 +342,16 @@ a separator ' -> '."
         org-super-links-backlink-into-drawer t
         org-super-links-link-prefix "- ")
   )
+
+(use-package! org-appear
+  :hook (org-mode . org-appear-mode)
+  :config
+  (setq  org-appear-autoemphasis t
+        org-appear-autosubmarkers t
+        org-appear-autolinks nil)
+  ;; for proper first-time setup, `org-appear--set-elements'
+  ;; needs to be run after other hooks have acted.
+  (run-at-time nil nil #'org-appear--set-elements))
 
 (require 'url-util) ;needed for encoding spaces to %20
 
@@ -397,6 +507,55 @@ a separator ' -> '."
   (setq dired-sidebar-use-term-integration t)
   (setq dired-sidebar-use-custom-font t))
 
+(setq
+ m/sidebar-file "~/orgdir/emacs/sidebar.org"
+ m/sidebar-private-file "~/orgdir/emacs/sidebar-private.org")
+
+(defun m/showindex ()
+  "Show the index of current projects"
+  (interactive)
+  (let ((buffer (get-file-buffer m/sidebar)))
+    (progn
+      (display-buffer-in-side-window buffer '((side . left) (window-width . 0.25)))
+      (set-window-dedicated-p (get-buffer-window buffer) t)
+      (select-window (get-buffer-window buffer))
+          ;; (m/index-faces)
+      )))
+
+(defun m/hideindex ()
+  "Hide the index of current projects"
+  (interactive)
+  (let ((buffer (get-file-buffer m/sidebar)))
+    (progn
+      (delete-window (get-buffer-window buffer)))))
+
+(defun m/toggleindex ()
+  "Toggle the index of current projects"
+  (interactive)
+  (let* ((buffer (get-file-buffer m/sidebar))
+         (window (get-buffer-window buffer)))
+    (if (and buffer window)
+        (m/hideindex)
+      (progn
+        (find-file-noselect m/sidebar)
+        (m/showindex)))))
+
+(defun m/toggleindex-public ()
+  "Set the sidebar-file file and toggle it"
+  (interactive)
+  (setq m/sidebar m/sidebar-file)
+  (m/toggleindex))
+
+
+(defun m/toggleindex-private ()
+  "Set the sidebar file and toggle it"
+  (interactive)
+  (setq m/sidebar m/sidebar-private-file)
+  (m/toggleindex))
+
+(global-set-key (kbd "C-<f1>") 'm/toggleindex-public)
+(global-set-key (kbd "C-<f2>") 'm/toggleindex-private)
+
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
@@ -404,7 +563,7 @@ a separator ' -> '."
 
 (defun my/get-gist ()
   (interactive)
-  (find-file "~/.doom.d/code-gists/my-code-gists.org")
+  (find-file "~/emacstools/code-gists/my-code-gists.org")
   (counsel-org-goto)
   (search-forward "#+begin_src")
   (org-edit-src-code)
@@ -413,6 +572,11 @@ a separator ' -> '."
   (kill-buffer)
   (yank))
 
+(setq infodir-root "~/emacstools/my-info-references/info-files/")
+
+;; https://github.com/frap/doom-termux/blob/3cd61486bab2c534da1f464881ac99b385eff5fc/%2Bpopup.el
+(set-popup-rule! "^\\*info.*" :size 82 :side 'right :ttl t :select t :quit t)
+
 (defun info-mode ()
   (interactive)
   (let ((file-name (buffer-file-name)))
@@ -420,7 +584,6 @@ a separator ' -> '."
     (info file-name)))
 (add-to-list 'auto-mode-alist '("\\.info\\'" . info-mode))
 
-(setq infodir-root "~/.doom.d/my-info-references/info-files/")
 
 (defun my/pick-infodir-name-action-list-candidates (str pred _)
   (setq infodir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
@@ -440,6 +603,20 @@ a separator ' -> '."
 (map! :leader
       :desc "Pick an info file"
       "o i" #'my/pick-infodir-name)
+
+(defun my/open/config-org ()
+  (interactive)
+  (split-window-right)
+  (find-file "~/.doom.d/config.org"))
+
+
+(map! :leader
+      :desc "Speed dial to to file"
+      "0" #'my/open/config-org)
+
+(setq yas-snippet-dirs
+      '("~/emacstools/snippets"                 ;; personal snippets
+        ))
 
 (use-package ivy-yasnippet
   :bind ("C-c y" . ivy-yasnippet))
@@ -591,19 +768,9 @@ a separator ' -> '."
 (replace-string "\366" "" nil (point-min) (point-max))
 (replace-string "\247" "***" nil (point-min) (point-max))
 (replace-string "\267" "****" nil (point-min) (point-max))
-(replace-string "\351" "é" nil (point-min) (point-max))
-(replace-string "\347" "ç" nil (point-min) (point-max))
-(replace-string "\352" "ê" nil (point-min) (point-max))
-(replace-string "\  342" "â" nil (point-min) (point-max))
-(replace-string "\307" "Ç" nil (point-min) (point-max))
-(replace-string "\340" "à" nil (point-min) (point-max))
-(replace-string "\340" "à" nil (point-min) (point-max))
-(replace-string "\364" "ô" nil (point-min) (point-max))
-(replace-string "\353" "ë" nil (point-min) (point-max))
-(replace-string "\243" "£" nil (point-min) (point-max))
 ));end replace-garbage-characters
 ;bind-key replace-garbage-characters
-(bind-key  "\C-cr"  'replace-garbage-chars)
+(bind-key  "\C-cr"  'my/replace-garbage-chars)
 
 (defun set-proxy()
   (interactive)
@@ -626,11 +793,6 @@ a separator ' -> '."
 (kill-emacs)
 )
 
-(defun my/byte-compile-init-dir ()
-  "Byte-compile all your dotfiles."
-  (interactive)
-  (byte-recompile-directory (concat user-emacs-directory "config/elispfiles/") 0))
-
 (defun gs/volatile-kill-buffer ()
   "Kill current buffer unconditionally."
   (interactive)
@@ -639,14 +801,6 @@ a separator ' -> '."
     (delete-window)))
 
 (global-set-key (kbd "C-x k") 'gs/volatile-kill-buffer)
-
-(defun gs/find-file-reuse-buffer ()
-  "find file and close previous file"
-  (interactive)
-  (save-buffer)
-  (counsel-find-file)
-  (kill-buffer (previous-buffer)))
-(global-set-key (kbd "C-x C-f") 'gs/find-file-reuse-buffer)
 
 (defun gs/vsplit-previous-buff ()
   "find file and close previous file"
@@ -670,61 +824,30 @@ a separator ' -> '."
   (mapc 'kill-buffer (delq (current-buffer) (buffer-list))))
 
 ;; https://github.com/magnars/.emacs.d/blob/master/defuns/buffer-defuns.el
-(require 'cl)
-
-(defun my/rotate-windows (count)
-  "Rotate your windows.
-Dedicated windows are left untouched. Giving a negative prefix
-argument makes the windows rotate backwards."
-  (interactive "p")
-  (let* ((non-dedicated-windows (remove-if 'window-dedicated-p (window-list)))
-         (num-windows (length non-dedicated-windows))
-         (i 0)
-         (step (+ num-windows count)))
-    (cond ((not (> num-windows 1))
-           (message "You can't rotate a single window!"))
-          (t
-           (dotimes (counter (- num-windows 1))
-             (let* ((next-i (% (+ step i) num-windows))
-
-                    (w1 (elt non-dedicated-windows i))
-                    (w2 (elt non-dedicated-windows next-i))
-
-                    (b1 (window-buffer w1))
-                    (b2 (window-buffer w2))
-
-                    (s1 (window-start w1))
-                    (s2 (window-start w2)))
-               (set-window-buffer w1 b2)
-               (set-window-buffer w2 b1)
-               (set-window-start w1 s2)
-               (set-window-start w2 s1)
-               (setq i next-i)))))))
-
 (defun my/toggle-window-split ()
   (interactive)
   (if (= (count-windows) 2)
       (let* ((this-win-buffer (window-buffer))
-             (next-win-buffer (window-buffer (next-window)))
-             (this-win-edges (window-edges (selected-window)))
-             (next-win-edges (window-edges (next-window)))
-             (this-win-2nd (not (and (<= (car this-win-edges)
-                                         (car next-win-edges))
-                                     (<= (cadr this-win-edges)
-                                         (cadr next-win-edges)))))
-             (splitter
-              (if (= (car this-win-edges)
-                     (car (window-edges (next-window))))
-                  'split-window-horizontally
-                'split-window-vertically)))
-        (delete-other-windows)
-        (let ((first-win (selected-window)))
-          (funcall splitter)
-          (if this-win-2nd (other-window 1))
-          (set-window-buffer (selected-window) this-win-buffer)
-          (set-window-buffer (next-window) next-win-buffer)
-          (select-window first-win)
-          (if this-win-2nd (other-window 1))))))
+	     (next-win-buffer (window-buffer (next-window)))
+	     (this-win-edges (window-edges (selected-window)))
+	     (next-win-edges (window-edges (next-window)))
+	     (this-win-2nd (not (and (<= (car this-win-edges)
+					 (car next-win-edges))
+				     (<= (cadr this-win-edges)
+					 (cadr next-win-edges)))))
+	     (splitter
+	      (if (= (car this-win-edges)
+		     (car (window-edges (next-window))))
+		  'split-window-horizontally
+		'split-window-vertically)))
+	(delete-other-windows)
+	(let ((first-win (selected-window)))
+	  (funcall splitter)
+	  (if this-win-2nd (other-window 1))
+	  (set-window-buffer (selected-window) this-win-buffer)
+	  (set-window-buffer (next-window) next-win-buffer)
+	  (select-window first-win)
+	  (if this-win-2nd (other-window 1))))))
 
 (setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
 
@@ -735,11 +858,13 @@ argument makes the windows rotate backwards."
 (defun my/work/open-todo ()
   (interactive)
   (my/work/open-file-in-sidebar "contents/private/todo-for-today.org"))
+
 (bind-key  "\C-cwot"  'my/work/open-todo)
 
 (defun my/work/open-bookmarks ()
   (interactive)
   (my/work/open-file-in-sidebar "contents/bookmarks.org"))
+
 (bind-key  "\C-cwob"  'my/work/open-bookmarks)
 
 
@@ -750,7 +875,11 @@ argument makes the windows rotate backwards."
                  (read-string "Enter Task for the day :"
                               (concat (format-time-string "%Y-%m-%d-")) nil  nil))
                 ".task/"))
-  (make-directory (concat myvar/rum-work-notes-path "contents/private/tasks/" myvar/task-dir) :parents)
-  (find-file (concat myvar/rum-work-notes-path "contents/private/tasks/" myvar/task-dir "index.org")))
+  (make-directory (concat myvar/rum-work-notes-path "contents/internal/tasks/" myvar/task-dir) :parents)
+  (find-file (concat myvar/rum-work-notes-path "contents/internal/tasks/" myvar/task-dir "index.org")))
 
 (bind-key  "\C-cwtc"  'my/work/task/create)
+
+(defun my/load-helpers()
+  (interactive)
+  (load "~/emacstools/load-helpers.el"))

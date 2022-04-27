@@ -69,8 +69,11 @@
 
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
-(package! skeletor)
+(package! org-appear)
 (package! ob-napkin)
+(package! org-super-agenda)
+
+(package! skeletor)
 (package! super-save)
 (package! dired-sidebar)
 (package! zk)

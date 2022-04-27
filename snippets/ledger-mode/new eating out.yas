@@ -1,6 +1,0 @@
-# -*- mode: snippet -*-
-# name: new eating out
-# key: .ne
-# --
-`(format-time-string "%Y-%m-%d")` Eating Out $1
-    Expenses:Food:EatingOut           $0 INR

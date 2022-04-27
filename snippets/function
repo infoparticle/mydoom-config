@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# name: function
-# key: fn
-# contributor: conscat
-# --
-${3:$(map-void yas-text "void " "auto ")}${1:name}($2)${3:$(map-void yas-text "" " -> ")}$3 {
-$0
-}
