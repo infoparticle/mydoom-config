@@ -66,6 +66,8 @@
 
 (unpin! org-roam)
 (package! org-roam-ui)
+(package! beacon)
+;;(package! hl-line+)
 
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
@@ -80,3 +82,4 @@
 
 ;; coding
 (package! ivy-yasnippet)
+(package! highlight-symbol)

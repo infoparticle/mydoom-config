@@ -52,6 +52,11 @@
 (setq display-line-numbers-type nil)
 (tab-bar-mode)
 
+ (global-superword-mode 1)
+
+;;(show-paren-mode 1)
+;;(setq show-paren-style 'expression)
+
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
 ;; - `load!' for loading external *.el files relative to this one
@@ -85,6 +90,14 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   (setq org-hide-emphasis-markers t)
   (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
+
+ (defun my/org/org-reformat-buffer ()
+    (interactive)
+    (when (y-or-n-p "Really format current buffer? ")
+      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+        (erase-buffer)
+        (insert document)
+        (goto-char (point-min)))))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -559,6 +572,13 @@ a separator ' -> '."
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
+(use-package! beacon
+  :defer t
+  :config
+  (setq beacon-push-mark 35)
+  (setq beacon-color "#666600")
+  (beacon-mode 1))
+
 (use-package! skeletor)
 
 (defun my/get-gist ()
@@ -571,6 +591,16 @@ a separator ' -> '."
   (org-edit-src-abort)
   (kill-buffer)
   (yank))
+
+ (use-package! highlight-symbol
+        :ensure t
+        :defer 10
+        :bind (("M-n" . highlight-symbol-next)
+               ("M-p" . highlight-symbol-prev))
+        :init
+        (setq highlight-symbol-idle-delay 0.3)
+        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+        (highlight-symbol-nav-mode))
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -603,16 +633,6 @@ a separator ' -> '."
 (map! :leader
       :desc "Pick an info file"
       "o i" #'my/pick-infodir-name)
-
-(defun my/open/config-org ()
-  (interactive)
-  (split-window-right)
-  (find-file "~/.doom.d/config.org"))
-
-
-(map! :leader
-      :desc "Speed dial to to file"
-      "0" #'my/open/config-org)
 
 (setq yas-snippet-dirs
       '("~/emacstools/snippets"                 ;; personal snippets
@@ -828,26 +848,26 @@ a separator ' -> '."
   (interactive)
   (if (= (count-windows) 2)
       (let* ((this-win-buffer (window-buffer))
-	     (next-win-buffer (window-buffer (next-window)))
-	     (this-win-edges (window-edges (selected-window)))
-	     (next-win-edges (window-edges (next-window)))
-	     (this-win-2nd (not (and (<= (car this-win-edges)
-					 (car next-win-edges))
-				     (<= (cadr this-win-edges)
-					 (cadr next-win-edges)))))
-	     (splitter
-	      (if (= (car this-win-edges)
-		     (car (window-edges (next-window))))
-		  'split-window-horizontally
-		'split-window-vertically)))
-	(delete-other-windows)
-	(let ((first-win (selected-window)))
-	  (funcall splitter)
-	  (if this-win-2nd (other-window 1))
-	  (set-window-buffer (selected-window) this-win-buffer)
-	  (set-window-buffer (next-window) next-win-buffer)
-	  (select-window first-win)
-	  (if this-win-2nd (other-window 1))))))
+         (next-win-buffer (window-buffer (next-window)))
+         (this-win-edges (window-edges (selected-window)))
+         (next-win-edges (window-edges (next-window)))
+         (this-win-2nd (not (and (<= (car this-win-edges)
+                     (car next-win-edges))
+                     (<= (cadr this-win-edges)
+                     (cadr next-win-edges)))))
+         (splitter
+          (if (= (car this-win-edges)
+             (car (window-edges (next-window))))
+          'split-window-horizontally
+        'split-window-vertically)))
+    (delete-other-windows)
+    (let ((first-win (selected-window)))
+      (funcall splitter)
+      (if this-win-2nd (other-window 1))
+      (set-window-buffer (selected-window) this-win-buffer)
+      (set-window-buffer (next-window) next-win-buffer)
+      (select-window first-win)
+      (if this-win-2nd (other-window 1))))))
 
 (setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
 
@@ -883,3 +903,21 @@ a separator ' -> '."
 (defun my/load-helpers()
   (interactive)
   (load "~/emacstools/load-helpers.el"))
+
+(defun my/open/config-org ()
+  (interactive)
+  (split-window-right)
+  (find-file "~/.doom.d/config.org"))
+
+(defun my/open/work-rum-standup-org ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
+
+
+
+(map! :leader
+      :desc "Speed dial to to file"
+      "0" #'my/open/config-org
+      "1" #'my/open/work-rum-standup-org
+      )

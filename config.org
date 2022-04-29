@@ -1,11 +1,11 @@
-#+TITLE: Config
-#+BABEL: :cache yes
-#+PROPERTY: header-args :tangle yes
-#+SELECT_TAGS: export
-#+EXCLUDE_TAGS: noexport
-Last Saved: "Apr 27, 2022 Wed"
+#+title: Config
+#+babel: :cache yes
+#+property: header-args :tangle yes
+#+select_tags: export
+#+exclude_tags: noexport
+Last Saved: "Apr 29, 2022 Fri"
 
-*** Table of contents                                                                   :TOC_7:
+*** Table of contents :TOC_7:
 - [[#my-config][My Config]]
   - [[#useful-macros][Useful Macros]]
   - [[#default-config][Default Config]]
@@ -13,15 +13,16 @@ Last Saved: "Apr 27, 2022 Wed"
     - [[#others][Others]]
   - [[#org-mode][Org mode]]
     - [[#time-stamp-and-basic-org-defaults][Time Stamp and basic org defaults]]
+    - [[#org-formatter][org formatter]]
     - [[#org-babel][Org babel]]
     - [[#org-captures][org captures]]
     - [[#org-agenda][org-agenda]]
-      -  [[#org-agenda-keywords][org-agenda keywords]]
+      - [[#org-agenda-keywords][org-agenda keywords]]
       - [[#org-cyrpt][org cyrpt]]
       - [[#org-super-agenda][org super agenda]]
     - [[#atomic-chrome][Atomic-chrome]]
     - [[#org-super-links][Org super links]]
-    - [[#org][org]]
+    - [[#org-appear][org-appear]]
     - [[#screenshot---windows][Screenshot - Windows]]
     - [[#screenshot-for-chart-gallery][screenshot for chart gallery]]
     - [[#org-roam-and-org-roam-ui][org-roam and org-roam-ui]]
@@ -33,12 +34,13 @@ Last Saved: "Apr 27, 2022 Wed"
     - [[#dired-sidebar][dired-sidebar]]
     - [[#sidebar][sidebar]]
   - [[#ui-stuff][UI Stuff]]
+    - [[#beacon][beacon]]
   - [[#project-management][Project Management]]
     - [[#skeltor][skeltor]]
   - [[#coding--programming][coding / Programming]]
     - [[#gist-managment][gist managment]]
+    - [[#highlight-symbols][highlight symbols]]
     - [[#managing-info-files][Managing info files]]
-    - [[#file-speed-dials][file speed dials]]
     - [[#yas-snippet][yas-snippet]]
     - [[#personal-info-help-pages][personal info help pages]]
     - [[#java][java]]
@@ -55,11 +57,12 @@ Last Saved: "Apr 27, 2022 Wed"
   - [[#work][Work]]
     - [[#open-work-tasks][open work tasks]]
     - [[#load-domain-specific-helpers][load domain specific helpers]]
+    - [[#file-speed-dials][file speed dials]]
 
 * My Config
 ** Useful Macros
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defmacro with-system (type &rest body)
   "Evaluate BODY if `system-type' equals TYPE.
    usage: (with-system windows-nt  <code> )
@@ -67,8 +70,7 @@ Last Saved: "Apr 27, 2022 Wed"
   (declare (indent defun))
   `(when (eq system-type ',type)
      ,@body))
-
-#+END_SRC
+#+end_src
 ** Default Config
 
 #+begin_src emacs-lisp
@@ -82,7 +84,6 @@ Last Saved: "Apr 27, 2022 Wed"
 ;; clients, file templates and snippets.
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
-
 #+end_src
 
 *** Fonts and Themes
@@ -116,8 +117,8 @@ Get all fonts present
 ;; `load-theme' function. This is the default:
 ;;(setq doom-theme 'doom-one-light)
 (setq doom-theme 'doom-zenburn)
-
 #+end_src
+
 *** Others
 
 #+begin_src emacs-lisp
@@ -131,6 +132,11 @@ Get all fonts present
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type nil)
 (tab-bar-mode)
+
+ (global-superword-mode 1)
+
+;;(show-paren-mode 1)
+;;(setq show-paren-style 'expression)
 
 ;; Here are some additional functions/macros that could help you configure Doom:
 ;;
@@ -171,9 +177,18 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 #+end_src
-
+*** org formatter
+#+begin_src emacs-lisp
+ (defun my/org/org-reformat-buffer ()
+    (interactive)
+    (when (y-or-n-p "Really format current buffer? ")
+      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+        (erase-buffer)
+        (insert document)
+        (goto-char (point-min)))))
+#+end_src
 *** Org babel
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (org-babel-do-load-languages
 'org-babel-load-languages
 '((python . t)
@@ -198,7 +213,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 
 ;; avoid tangling into dos eol in linux files edited using tramp
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
-#+END_SRC
+#+end_src
 
 *** org captures
 
@@ -261,12 +276,10 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 #+begin_src emacs-lisp
 
 (global-set-key (kbd "C-c a") 'org-agenda-list)
-
-
 #+end_src
-****  org-agenda keywords
+**** org-agenda keywords
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq org-agenda-inhibit-startup t) ;; ~50x speedup
 (setq org-agenda-use-tag-inheritance nil) ;; 3-4x speedup
 (setq org-agenda-use-time-grid t
@@ -299,29 +312,29 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
             ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
             ("EVENT" ("WAITING") ("CANCELLED") ("HOLD"))
             ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
-#+END_SRC
+#+end_src
 
 
 cfw-org-calendar
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq
  cfw:display-calendar-holidays nil ;don't process holidays.el and clutter the agenda
  cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap)
-#+END_SRC
+#+end_src
 **** org cyrpt
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (require 'org-crypt)
 (org-crypt-use-before-save-magic)
 (setq org-tags-exclude-from-inheritance (quote ("crypt")))
 ;; GPG key to use for encryption
 ;; Either the Key ID or set to nil to use symmetric encryption.
 (setq org-crypt-key nil)
-#+END_SRC
+#+end_src
 
 **** org super agenda
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! org-super-agenda
   :commands org-super-agenda-mode)
 
@@ -398,9 +411,9 @@ cfw-org-calendar
                            :todo ("SOMEDAY" )
                            :order 90)
                           (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
-#+END_SRC
+#+end_src
 
-#+RESULTS:
+#+results:
 | o | Overview | ((agenda  ((org-agenda-span 'day) (org-super-agenda-groups '((:name Today :time-grid t :date today :todo TODAY :scheduled today :order 1))))) (alltodo  ((org-agenda-overriding-header ) (org-super-agenda-groups '((:name Next to do :todo NEXT :order 1) (:name Important :tag Important :priority A :order 6) (:name Due Today :deadline today :order 2) (:name Due Soon :deadline future :order 8) (:name Overdue :deadline past :face error :order 7) (:name Assignments :tag Assignment :order 10) (:name Issues :tag Issue :order 12) (:name Emacs :tag Emacs :order 13) (:name Projects :tag Project :order 14) (:name Research :tag Research :order 15) (:name To read :tag Read :order 30) (:name Waiting :todo WAITING :order 20) (:name University :tag uni :order 32) (:name Trivial :priority<= E :tag (Trivial Unimportant) :todo (SOMEDAY) :order 90) (:discard (:tag (Chore Routine Daily)))))))) |
 
 *** Atomic-chrome
@@ -408,11 +421,10 @@ cfw-org-calendar
 #+begin_src emacs-lisp
 
 (use-package! atomic-chrome :ensure t)
-
 #+end_src
 
 *** Org super links
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! org-id)
 (use-package! org-super-links
     :bind (("C-c s s" . org-super-links-link)
@@ -467,7 +479,7 @@ a separator ' -> '."
         org-super-links-backlink-into-drawer t
         org-super-links-link-prefix "- ")
   )
-#+END_SRC
+#+end_src
 
 (use-package org-super-links
   :bind (("C-c s s" . org-super-links-link)
@@ -479,9 +491,9 @@ a separator ' -> '."
   :config
   (setq org-super-links-related-into-drawer t
   	org-super-links-link-prefix 'org-super-links-link-prefix-timestamp))
-*** org
+*** org-appear
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! org-appear
   :hook (org-mode . org-appear-mode)
   :config
@@ -491,7 +503,7 @@ a separator ' -> '."
   ;; for proper first-time setup, `org-appear--set-elements'
   ;; needs to be run after other hooks have acted.
   (run-at-time nil nil #'org-appear--set-elements))
-#+END_SRC
+#+end_src
 *** Screenshot - Windows
 
 #+begin_src emacs-lisp
@@ -541,7 +553,7 @@ a separator ' -> '."
 
 *** screenshot for chart gallery
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)
   (save-excursion
@@ -575,10 +587,10 @@ a separator ' -> '."
     (org-display-inline-images)
     )
   )
-#+END_SRC
+#+end_src
 
 *** org-roam and org-roam-ui
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq org-roam-directory "c:/my/org-roam")
 
 (use-package! websocket
@@ -595,7 +607,7 @@ a separator ' -> '."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
-#+END_SRC
+#+end_src
 *** org-transclusion
 
 #+begin_example
@@ -608,14 +620,13 @@ a separator ' -> '."
    :leader
    :prefix "n"
    :desc "Org Transclusion Mode" "t" #'org-transclusion-mode))
-
 #+end_example
 
 *** spell check
 
 get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/files/
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
 
 ;; "en_US" is key to lookup in `ispell-local-dictionary-alist`, please note it will be passed   to hunspell CLI as "-d" parameter
@@ -629,13 +640,13 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
       '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
 
 (setq text-mode-hook '(lambda() (flyspell-mode t)))
-#+END_SRC
+#+end_src
 
 
 ** Functionality
 
 *** Super-save
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! super-save
   :ensure t
   :config
@@ -645,10 +656,10 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
   (setq super-save-exclude '(".gpg"))
   (add-to-list 'super-save-hook-triggers 'find-file-hook)
   (super-save-mode +1))
-#+END_SRC
+#+end_src
 
 *** dired
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq dired-recursive-copies (quote always)) ;no asking
 (setq dired-recursive-deletes (quote top)) ; ask once
 (setq dired-dwim-target t)
@@ -666,12 +677,11 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 (setq dired-recursive-deletes 'top)
 (setq dired-listing-switches "-hal")
 (setq diredp-hide-details-initially-flag nil)
+#+end_src
 
-#+END_SRC
-
-#+RESULTS:
+#+results:
 *** dired-sidebar
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package dired-sidebar
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :ensure t
@@ -690,11 +700,11 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
   ;(setq dired-sidebar-theme 'icons) ;not working
   (setq dired-sidebar-use-term-integration t)
   (setq dired-sidebar-use-custom-font t))
-#+END_SRC
+#+end_src
 
 *** sidebar
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq
  m/sidebar-file "~/orgdir/emacs/sidebar.org"
  m/sidebar-private-file "~/orgdir/emacs/sidebar-private.org")
@@ -743,28 +753,53 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 (global-set-key (kbd "C-<f1>") 'm/toggleindex-public)
 (global-set-key (kbd "C-<f2>") 'm/toggleindex-private)
+#+end_src
 
-#+END_SRC
-
-#+RESULTS:
+#+results:
 : m/toggleindex-private
 
 ** UI Stuff
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
-#+END_SRC
+#+end_src
+
+*** beacon
+
+#+begin_src emacs-lisp
+(use-package! beacon
+  :defer t
+  :config
+  (setq beacon-push-mark 35)
+  (setq beacon-color "#666600")
+  (beacon-mode 1))
+#+end_src
+
+
+(use-package hl-line+
+  :hook
+  (window-scroll-functions . hl-line-flash)
+  (focus-in . hl-line-flash)
+  (post-command . hl-line-flash)
+
+:custom
+(global-hl-line-mode nil)
+(hl-line-flash-show-period 0.5)
+(hl-line-inhibit-highlighting-for-modes '(dired-mode))
+(hl-line-overlay-priority -100) ;; sadly, seems not observed by diredfl
+)
+
 ** Project Management
 
 *** skeltor
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! skeletor)
-#+END_SRC
+#+end_src
 
 ** coding / Programming
 
 *** gist managment
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my/get-gist ()
   (interactive)
   (find-file "~/emacstools/code-gists/my-code-gists.org")
@@ -775,11 +810,24 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
   (org-edit-src-abort)
   (kill-buffer)
   (yank))
+#+end_src
 
-#+END_SRC
+*** highlight symbols
+#+begin_src emacs-lisp
+ (use-package! highlight-symbol
+        :ensure t
+        :defer 10
+        :bind (("M-n" . highlight-symbol-next)
+               ("M-p" . highlight-symbol-prev))
+        :init
+        (setq highlight-symbol-idle-delay 0.3)
+        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+        (highlight-symbol-nav-mode))
+#+end_src
+
 *** Managing info files
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -812,37 +860,20 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 (map! :leader
       :desc "Pick an info file"
       "o i" #'my/pick-infodir-name)
+#+end_src
 
-
-#+END_SRC
-
-#+RESULTS:
+#+results:
 : my/pick-infodir-name
-*** file speed dials
-#+BEGIN_SRC emacs-lisp
-
-(defun my/open/config-org ()
-  (interactive)
-  (split-window-right)
-  (find-file "~/.doom.d/config.org"))
-
-
-(map! :leader
-      :desc "Speed dial to to file"
-      "0" #'my/open/config-org)
-
-#+END_SRC
 *** yas-snippet
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq yas-snippet-dirs
       '("~/emacstools/snippets"                 ;; personal snippets
         ))
 
 (use-package ivy-yasnippet
   :bind ("C-c y" . ivy-yasnippet))
-
-#+END_SRC
+#+end_src
 
 *** personal info help pages
 
@@ -854,7 +885,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 *** java
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq JAVA_BASE "c:/opt/jdks")
 
 ;;
@@ -926,10 +957,9 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
     (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
-
-#+END_SRC
+#+end_src
 ** Voidtools
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
@@ -938,19 +968,18 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
       (format "c:/opt/localbin/es.exe  -p -r %s"
               (counsel--elisp-to-pcre
                (ivy--regex input t))))))
-#+END_SRC
+#+end_src
 ** workflow helpers
 *** Wiki
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
 (map! :leader
       :desc "New journal entry"
       "o w" #'my/pick-wiki-name)
+#+end_src
 
-#+END_SRC
 
-
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq wiki-root "C:\\Users\\gopinat\\Dropbox\\emacs-apps\\wikis")
 
 (defun my/pick-wiki-name-action-list-candidates (str pred _)
@@ -980,11 +1009,10 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
             :require-match t
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
-
-#+END_SRC
+#+end_src
 
 *** Create Trading Journal Entry
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my/create-trading-journal-entry ()
   (interactive)
   (setq trade-journal-dir
@@ -998,12 +1026,12 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
                 ".org"))
 
   (find-file (concat trade-journal-dir myvar/file-name)))
-#+END_SRC
+#+end_src
 
 ** Text Transformations
 *** Removing garbage chars
 https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my/replace-garbage-chars ()
 "Replace non-rendering MS and other garbage characters with latin1 equivalents."
 (interactive)
@@ -1025,12 +1053,12 @@ https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
 ));end replace-garbage-characters
 ;bind-key replace-garbage-characters
 (bind-key  "\C-cr"  'my/replace-garbage-chars)
-#+END_SRC
+#+end_src
 ** Utility Function
 
 *** set-proxy/unset-proxy
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun set-proxy()
   (interactive)
   (setq url-proxy-services
@@ -1044,20 +1072,20 @@ https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
   (setenv "HTTP_PROXY" "")
   (setenv "HTTPS_PROXY" "")
 )
-#+END_SRC
+#+end_src
 
 *** emacs server shutdown
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun server-shutdown ()
 "Save buffers, Quit, and Shutdown (kill) server"
 (interactive)
 (save-some-buffers)
 (kill-emacs)
 )
-#+END_SRC
+#+end_src
 *** Buffer Management
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun gs/volatile-kill-buffer ()
   "Kill current buffer unconditionally."
   (interactive)
@@ -1093,28 +1121,27 @@ https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
   (interactive)
   (if (= (count-windows) 2)
       (let* ((this-win-buffer (window-buffer))
-	     (next-win-buffer (window-buffer (next-window)))
-	     (this-win-edges (window-edges (selected-window)))
-	     (next-win-edges (window-edges (next-window)))
-	     (this-win-2nd (not (and (<= (car this-win-edges)
-					 (car next-win-edges))
-				     (<= (cadr this-win-edges)
-					 (cadr next-win-edges)))))
-	     (splitter
-	      (if (= (car this-win-edges)
-		     (car (window-edges (next-window))))
-		  'split-window-horizontally
-		'split-window-vertically)))
-	(delete-other-windows)
-	(let ((first-win (selected-window)))
-	  (funcall splitter)
-	  (if this-win-2nd (other-window 1))
-	  (set-window-buffer (selected-window) this-win-buffer)
-	  (set-window-buffer (next-window) next-win-buffer)
-	  (select-window first-win)
-	  (if this-win-2nd (other-window 1))))))
-
-#+END_SRC
+         (next-win-buffer (window-buffer (next-window)))
+         (this-win-edges (window-edges (selected-window)))
+         (next-win-edges (window-edges (next-window)))
+         (this-win-2nd (not (and (<= (car this-win-edges)
+                     (car next-win-edges))
+                     (<= (cadr this-win-edges)
+                     (cadr next-win-edges)))))
+         (splitter
+          (if (= (car this-win-edges)
+             (car (window-edges (next-window))))
+          'split-window-horizontally
+        'split-window-vertically)))
+    (delete-other-windows)
+    (let ((first-win (selected-window)))
+      (funcall splitter)
+      (if this-win-2nd (other-window 1))
+      (set-window-buffer (selected-window) this-win-buffer)
+      (set-window-buffer (next-window) next-win-buffer)
+      (select-window first-win)
+      (if this-win-2nd (other-window 1))))))
+#+end_src
 
 
 
@@ -1123,7 +1150,7 @@ TODO: Should copy general package configs to simplify keybindings.
 
 *** open work tasks
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
 
 (defun my/work/open-file-in-sidebar (it)
@@ -1154,15 +1181,37 @@ TODO: Should copy general package configs to simplify keybindings.
   (find-file (concat myvar/rum-work-notes-path "contents/internal/tasks/" myvar/task-dir "index.org")))
 
 (bind-key  "\C-cwtc"  'my/work/task/create)
-#+END_SRC
+#+end_src
 
-#+RESULTS:
+#+results:
 : my/work/task/create
 
 *** load domain specific helpers
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun my/load-helpers()
   (interactive)
   (load "~/emacstools/load-helpers.el"))
-#+END_SRC
+#+end_src
+
+*** file speed dials
+#+begin_src emacs-lisp
+
+(defun my/open/config-org ()
+  (interactive)
+  (split-window-right)
+  (find-file "~/.doom.d/config.org"))
+
+(defun my/open/work-rum-standup-org ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
+
+
+
+(map! :leader
+      :desc "Speed dial to to file"
+      "0" #'my/open/config-org
+      "1" #'my/open/work-rum-standup-org
+      )
+#+end_src
