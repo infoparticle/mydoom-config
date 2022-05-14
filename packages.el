@@ -86,3 +86,5 @@
 
 (package! sly)
 (package! highlight-sexp)
+(package! paren-face)
+(package! aggressive-indent)

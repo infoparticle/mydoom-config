@@ -117,7 +117,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (dot . t)
 (sql . t)))
 
-(use-package! ob-napkin :ensure t
+(use-package! ob-napkin
               :init
               (with-eval-after-load 'ob
   ;; Optional for syntax highlight of napkin-puml src block.
@@ -304,7 +304,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                            :order 90)
                           (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
 
-(use-package! atomic-chrome :ensure t)
+(use-package! atomic-chrome)
 
 (use-package! org-id)
 (use-package! org-super-links
@@ -464,13 +464,10 @@ a separator ' -> '."
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
 
-(setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
-
-;; "en_US" is key to lookup in `ispell-local-dictionary-alist`, please note it will be passed   to hunspell CLI as "-d" parameter
-(setq ispell-local-dictionary "en_US")
-
-(setq ispell-hunspell-dict-paths-alist
-      '(("en_US" "C:/opt/hunspell/dict/en_US.aff")))
+(with-system windows-nt
+  (setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
+  (setq ispell-hunspell-dict-paths-alist
+        '(("en_US" "C:/opt/hunspell/dict/en_US.aff"))))
 
 (setq ispell-local-dictionary "en_US")
 (setq ispell-local-dictionary-alist
@@ -479,7 +476,6 @@ a separator ' -> '."
 (setq text-mode-hook '(lambda() (flyspell-mode t)))
 
 (use-package! super-save
-  :ensure t
   :config
   (setq super-save-auto-save-when-idle t)
   (setq auto-save-default nil)
@@ -491,24 +487,20 @@ a separator ' -> '."
 (setq dired-recursive-copies (quote always)) ;no asking
 (setq dired-recursive-deletes (quote top)) ; ask once
 (setq dired-dwim-target t)
-
-;hide details
-(defun xah-dired-mode-setup ()
-  "to be run as hook for `dired-mode'."
-  (dired-hide-details-mode 1))
-(add-hook 'dired-mode-hook 'xah-dired-mode-setup)
-
-(define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file) ; was dired-advertised-find-file
-
-; put directories first
 (setq ls-lisp-dirs-first t)
 (setq dired-recursive-deletes 'top)
 (setq dired-listing-switches "-hal")
 (setq diredp-hide-details-initially-flag nil)
 
+(with-eval-after-load 'dired
+  (defun xah-dired-mode-setup ()
+    "to be run as hook for `dired-mode'."
+    (dired-hide-details-mode 1))
+  (add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+  (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
+
 (use-package dired-sidebar
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
-  :ensure t
   :commands (dired-sidebar-toggle-sidebar)
   :init
   (add-hook 'dired-sidebar-mode-hook
@@ -598,7 +590,6 @@ a separator ' -> '."
   (yank))
 
  (use-package! highlight-symbol
-        :ensure t
         :defer 10
         :bind (("M-n" . highlight-symbol-next)
                ("M-p" . highlight-symbol-prev))
@@ -718,16 +709,20 @@ a separator ' -> '."
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 
-(use-package! sly :ensure t
-              :init
-              (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe")
-              (add-hook 'lisp-mode-hook 'sly-mode))
+(use-package! aggressive-indent
+  :config
+  (global-aggressive-indent-mode 1))
+
+(use-package! sly
+  :init
+  (with-system windows-nt
+    (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe"))
+  (add-hook 'lisp-mode-hook 'sly-mode))
 
 (use-package! highlight-sexp
-  :ensure t
   :config
   (setq hl-sexp-foreground-color nil
-      hl-sexp-background-color "#00253c")
+        hl-sexp-background-color "#00253c")
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
   (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
 
