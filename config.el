@@ -42,6 +42,11 @@
 ;;(setq doom-theme 'doom-one-light)
 (setq doom-theme 'doom-zenburn)
 
+(setq make-backup-files nil) ; stop creating backup~ files
+(setq auto-save-default nil) ; stop creating #autosave# files
+(setq create-lockfiles nil)
+
+
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/orgagenda")
@@ -712,6 +717,19 @@ a separator ' -> '."
     (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
+
+(use-package! sly :ensure t
+              :init
+              (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe")
+              (add-hook 'lisp-mode-hook 'sly-mode))
+
+(use-package! highlight-sexp
+  :ensure t
+  :config
+  (setq hl-sexp-foreground-color nil
+      hl-sexp-background-color "#00253c")
+  (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
+  (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
 
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)

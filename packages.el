@@ -83,3 +83,6 @@
 ;; coding
 (package! ivy-yasnippet)
 (package! highlight-symbol)
+
+(package! sly)
+(package! highlight-sexp)

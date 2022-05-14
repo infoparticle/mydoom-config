@@ -3,7 +3,7 @@
 #+property: header-args :tangle yes
 #+select_tags: export
 #+exclude_tags: noexport
-Last Saved: "Apr 29, 2022 Fri"
+Last Saved: "May 14, 2022 Sat"
 
 *** Table of contents :TOC_7:
 - [[#my-config][My Config]]
@@ -44,6 +44,7 @@ Last Saved: "Apr 29, 2022 Fri"
     - [[#yas-snippet][yas-snippet]]
     - [[#personal-info-help-pages][personal info help pages]]
     - [[#java][java]]
+    - [[#lisp-programming][lisp programming]]
   - [[#voidtools][Voidtools]]
   - [[#workflow-helpers][workflow helpers]]
     - [[#wiki][Wiki]]
@@ -122,6 +123,11 @@ Get all fonts present
 *** Others
 
 #+begin_src emacs-lisp
+
+(setq make-backup-files nil) ; stop creating backup~ files
+(setq auto-save-default nil) ; stop creating #autosave# files
+(setq create-lockfiles nil)
+
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
@@ -958,6 +964,26 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 #+end_src
+*** lisp programming
+
+#+BEGIN_SRC emacs-lisp
+(use-package! sly :ensure t
+              :init
+              (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe")
+              (add-hook 'lisp-mode-hook 'sly-mode))
+
+(use-package! highlight-sexp
+  :ensure t
+  :config
+  (setq hl-sexp-foreground-color nil
+      hl-sexp-background-color "#00253c")
+  (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
+  (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
+#+END_SRC
+
+#+RESULTS:
+: sly
+
 ** Voidtools
 #+begin_src emacs-lisp
 (with-eval-after-load 'counsel
