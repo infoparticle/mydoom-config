@@ -726,6 +726,11 @@ a separator ' -> '."
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
   (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
 
+(use-package! symex
+  :config
+  (symex-initialize)
+  (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
+
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
@@ -934,3 +939,6 @@ a separator ' -> '."
       "0" #'my/open/config-org
       "1" #'my/open/work-rum-standup-org
       )
+
+(with-system windows-nt
+  (cd "c:/my/tmp"))

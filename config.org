@@ -3,7 +3,7 @@
 #+property: header-args :tangle yes
 #+select_tags: export
 #+exclude_tags: noexport
-Last Saved: "May 14, 2022 Sat"
+Last Saved: "May 15, 2022 Sun"
 
 *** Table of contents :TOC_7:
 - [[#my-config][My Config]]
@@ -59,6 +59,7 @@ Last Saved: "May 14, 2022 Sat"
     - [[#open-work-tasks][open work tasks]]
     - [[#load-domain-specific-helpers][load domain specific helpers]]
     - [[#file-speed-dials][file speed dials]]
+  - [[#final-touches][Final Touches]]
 
 * My Config
 ** Useful Macros
@@ -72,6 +73,7 @@ Last Saved: "May 14, 2022 Sat"
   `(when (eq system-type ',type)
      ,@body))
 #+end_src
+
 ** Default Config
 
 #+begin_src emacs-lisp
@@ -990,6 +992,11 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
         hl-sexp-background-color "#00253c")
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
   (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
+
+(use-package! symex
+  :config
+  (symex-initialize)
+  (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
 #+END_SRC
 
 #+RESULTS:
@@ -1252,3 +1259,10 @@ TODO: Should copy general package configs to simplify keybindings.
       "1" #'my/open/work-rum-standup-org
       )
 #+end_src
+
+** Final Touches
+
+#+BEGIN_SRC emacs-lisp
+(with-system windows-nt
+  (cd "c:/my/tmp"))
+#+END_SRC

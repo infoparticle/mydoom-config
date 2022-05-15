@@ -88,3 +88,4 @@
 (package! highlight-sexp)
 (package! paren-face)
 (package! aggressive-indent)
+(package! symex)
