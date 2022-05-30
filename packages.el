@@ -51,11 +51,13 @@
 
 (package! doct)
 (package! gitconfig-mode
-	  :recipe (:host github :repo "magit/git-modes"
-			 :files ("gitconfig-mode.el")))
+          :recipe (:host github :repo "magit/git-modes"
+                         :files ("gitconfig-mode.el")))
 (package! gitignore-mode
-	  :recipe (:host github :repo "magit/git-modes"
-			 :files ("gitignore-mode.el")))
+  :recipe (:host github :repo "magit/git-modes"
+           :files ("gitignore-mode.el")))
+
+(package! code-review :disable t)
 
 (package! atomic-chrome)
 ;(package! org-msg)

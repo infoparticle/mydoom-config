@@ -17,30 +17,30 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
-;; are the three important ones:
-;;
-;; + `doom-font'
-;; + `doom-variable-pitch-font'
-;; + `doom-big-font' -- used for `doom-big-font-mode'; use this for
-;;   presentations or streaming.
-;;
-;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
-;; font string. You generally only need these two:
-;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
-(setq myfont "Fira Code Medium"  myfontsize 17)
-;(setq myfont "Iosevka Medium"  myfontsize 20)
-(setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-       doom-variable-pitch-font (font-spec :family "sans" :size 13))
-;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
-;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
+  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+  ;; are the three important ones:
+  ;;
+  ;; + `doom-font'
+  ;; + `doom-variable-pitch-font'
+  ;; + `doom-big-font' -- used for `doom-big-font-mode'; use this for
+  ;;   presentations or streaming.
+  ;;
+  ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
+  ;; font string. You generally only need these two:
+  ;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
+  (setq myfont "Fira Code Medium"  myfontsize 17)
+  ;(setq myfont "Iosevka Medium"  myfontsize 20)
+  (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
+         doom-variable-pitch-font (font-spec :family "sans" :size 13))
+  ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
+  ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
 
-;; There are two ways to load a theme. Both assume the theme is installed and
-;; available. You can either set `doom-theme' or manually load a theme with the
-;; `load-theme' function. This is the default:
-;;(setq doom-theme 'doom-one-light)
-(setq doom-theme 'doom-zenburn)
+  ;; There are two ways to load a theme. Both assume the theme is installed and
+  ;; available. You can either set `doom-theme' or manually load a theme with the
+  ;; `load-theme' function. This is the default:
+  ;;(setq doom-theme 'doom-one-light)
+  (setq doom-theme 'doom-zenburn)
 
 (setq make-backup-files nil) ; stop creating backup~ files
 (setq auto-save-default nil) ; stop creating #autosave# files
@@ -709,6 +709,20 @@ a separator ' -> '."
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 
+(use-package! lsp-java
+  :init
+  (setq lsp-java-java-path "C:/opt/jdks/openjdk-17/bin/java.exe")
+  :config
+  (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-17"
+                                                 :path "C:/opt/jdks/openjdk-17"
+                                                 )
+                                          (:name "JavaSE-1.8"
+                                                 :path "C:/opt/jdks/jdk1.8.0_211"
+                                                 :default t
+                                                 )]))
+(after! lsp-mode
+  (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
+
 (use-package! aggressive-indent
   :config
   (global-aggressive-indent-mode 1))
@@ -886,6 +900,15 @@ a separator ' -> '."
       (set-window-buffer (next-window) next-win-buffer)
       (select-window first-win)
       (if this-win-2nd (other-window 1))))))
+
+(defun my/string-utils/convert-backward-slash-to-forward-slash ()
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (narrow-to-region (point) (mark))
+      (goto-char (point-min))
+      (while (search-forward "\\" nil t)
+        (replace-match "/" nil t)))))
 
 (setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
 
