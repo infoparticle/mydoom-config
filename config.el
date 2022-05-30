@@ -637,8 +637,11 @@ a separator ' -> '."
 (use-package ivy-yasnippet
   :bind ("C-c y" . ivy-yasnippet))
 
-(setq JAVA_BASE "c:/opt/jdks")
+(with-system windows-nt
+  (setq JAVA_BASE "c:/opt/jdks"))
 
+(with-system gnu/linux
+  (setq JAVA_BASE "/usr/lib/jvm"))
 ;;
 ;; This function returns the list of installed
 ;;
@@ -705,21 +708,23 @@ a separator ' -> '."
   "Launches a powershell in buffer *powershell* and switches to it."
   (interactive)
   (let ((buffer (or buffer "*powershell*"))
-    (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
+        (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 
 (use-package! lsp-java
   :init
-  (setq lsp-java-java-path "C:/opt/jdks/openjdk-17/bin/java.exe")
+  (with-system windows-nt
+    (setq lsp-java-java-path "C:/opt/jdks/openjdk-17/bin/java.exe"))
   :config
-  (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-17"
-                                                 :path "C:/opt/jdks/openjdk-17"
-                                                 )
-                                          (:name "JavaSE-1.8"
-                                                 :path "C:/opt/jdks/jdk1.8.0_211"
-                                                 :default t
-                                                 )]))
+  (with-system windows-nt
+    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-17"
+                                             :path "C:/opt/jdks/openjdk-17"
+                                             )
+                                            (:name "JavaSE-1.8"
+                                             :path "C:/opt/jdks/jdk1.8.0_211"
+                                             :default t
+                                             )])))
 (after! lsp-mode
   (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
 
