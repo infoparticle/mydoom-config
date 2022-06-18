@@ -66,21 +66,23 @@
                        :files ("*.el")
                        ))
 
-(unpin! org-roam)
-(package! org-roam-ui)
+;;(unpin! org-roam)
+;;(package! org-roam-ui)
+(package! org-auto-tangle)
 (package! beacon)
 ;;(package! hl-line+)
 
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
 (package! org-appear)
-(package! ob-napkin)
+;;(package! ob-napkin)
 (package! org-super-agenda)
+(package! org-sidebar)
 
-(package! skeletor)
+;;(package! skeletor)
 (package! super-save)
 (package! dired-sidebar)
-(package! zk)
+;;(package! zk)
 
 ;; coding
 (package! ivy-yasnippet)
@@ -91,3 +93,4 @@
 (package! paren-face)
 (package! aggressive-indent)
 (package! symex)
+(package! all-the-icons :disable t)

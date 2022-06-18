@@ -3,7 +3,8 @@
 #+property: header-args :tangle yes
 #+select_tags: export
 #+exclude_tags: noexport
-Last Saved: "May 30, 2022 Mon"
+#+auto_tangle: t
+Last Saved: "Jun 18, 2022 Sat"
 
 *** Table of contents :TOC_7:
 - [[#my-config][My Config]]
@@ -23,6 +24,7 @@ Last Saved: "May 30, 2022 Mon"
     - [[#atomic-chrome][Atomic-chrome]]
     - [[#org-super-links][Org super links]]
     - [[#org-appear][org-appear]]
+    - [[#org-sidebar][org-sidebar]]
     - [[#screenshot---windows][Screenshot - Windows]]
     - [[#screenshot-for-chart-gallery][screenshot for chart gallery]]
     - [[#org-roam-and-org-roam-ui][org-roam and org-roam-ui]]
@@ -50,6 +52,7 @@ Last Saved: "May 30, 2022 Mon"
   - [[#workflow-helpers][workflow helpers]]
     - [[#wiki][Wiki]]
     - [[#create-trading-journal-entry][Create Trading Journal Entry]]
+    - [[#zettlekasten][Zettlekasten]]
   - [[#text-transformations][Text Transformations]]
     - [[#removing-garbage-chars][Removing garbage chars]]
   - [[#utility-functions][Utility Functions]]
@@ -62,6 +65,8 @@ Last Saved: "May 30, 2022 Mon"
     - [[#load-domain-specific-helpers][load domain specific helpers]]
     - [[#file-speed-dials][file speed dials]]
   - [[#final-touches][Final Touches]]
+- [[#config-ideas][Config Ideas]]
+  - [[#improve-directory-navigations-with-fzf][improve directory navigations with fzf]]
 
 * My Config
 ** Useful Macros
@@ -120,7 +125,13 @@ Get all fonts present
   ;; available. You can either set `doom-theme' or manually load a theme with the
   ;; `load-theme' function. This is the default:
   ;;(setq doom-theme 'doom-one-light)
-  (setq doom-theme 'doom-zenburn)
+  (setq doom-theme 'doom-opera-light)
+
+;;  (setq hl-sexp-foreground-color nil
+;;        hl-sexp-background-color "#00253c") ;;dark blue
+(setq hl-sexp-foreground-color nil
+        hl-sexp-background-color "#FEF9E7") ;;light yellow
+
 #+end_src
 
 *** Others
@@ -196,6 +207,16 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
         (goto-char (point-min)))))
 #+end_src
 *** Org babel
+
+https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but not needed
+(use-package! ob-napkin
+              :init
+              (with-eval-after-load 'ob
+  ;; Optional for syntax highlight of napkin-puml src block.
+  ;; (require 'plantuml)
+  (require 'ob-napkin)))
+
+
 #+begin_src emacs-lisp
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -209,19 +230,17 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (java . t)
 (dot . t)
 (sql . t)))
-
-(use-package! ob-napkin
-              :init
-              (with-eval-after-load 'ob
-  ;; Optional for syntax highlight of napkin-puml src block.
-  ;; (require 'plantuml)
-  (require 'ob-napkin)))
-
-(setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/.local/jars/plantuml.jar"))
+(setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 
 ;; avoid tangling into dos eol in linux files edited using tramp
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
 #+end_src
+
+#+BEGIN_SRC emacs-lisp
+(use-package! org-auto-tangle
+  :defer t
+  :hook (org-mode . org-auto-tangle-mode))
+#+END_SRC
 
 *** org captures
 
@@ -512,6 +531,14 @@ a separator ' -> '."
   ;; needs to be run after other hooks have acted.
   (run-at-time nil nil #'org-appear--set-elements))
 #+end_src
+
+*** org-sidebar
+#+BEGIN_SRC emacs-lisp
+(use-package! org-sidebar
+
+                )
+#+END_SRC
+
 *** Screenshot - Windows
 
 #+begin_src emacs-lisp
@@ -687,7 +714,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 *** dired-sidebar
 
 #+begin_src emacs-lisp
-(use-package dired-sidebar
+(use-package! dired-sidebar
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -780,7 +807,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 #+end_src
 
 
-(use-package hl-line+
+(use-package! hl-line+
   :hook
   (window-scroll-functions . hl-line-flash)
   (focus-in . hl-line-flash)
@@ -795,10 +822,73 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 ** Project Management
 
-*** skeltor
+(use-package projectile
+  :ensure t
+  :init
+  (projectile-mode +1)
+  :bind (:map projectile-mode-map
+              ("s-p" . projectile-command-map)
+              ("C-c p" . projectile-command-map)))
+
+
+  (projectile-register-project-type 'gradle '("build.gradle")
+                                    :project-file "build.gradle"
+                                    :compile "./gradlew build"
+                                    :test "./gradlew test"
+                                    :run "./gradlew bootRun"
+                                    :test-suffix "Tests")
+
+  (projectile-register-project-type 'npm '("package.json")
+                                    :project-file "package.json"
+                                    :src-dir "src/"
+                                    :test-dir "__tests__/"
+                                    :test-suffix ".spec")
+
 #+begin_src emacs-lisp
-(use-package! skeletor)
+(with-eval-after-load 'projectile
+  (with-system windows-nt
+    (projectile-register-project-type 'maven '("pom.xml")
+                                      :project-file "pom.xml"
+                                      :compile "mvn.cmd -B clean install"
+                                      :test "mvn.cmd -B test"
+                                      :run "mvn.cmd exec:java"
+                                      :test-suffix "Tests"))
+  (with-system gnu/linux
+    (projectile-register-project-type 'maven '("pom.xml")
+                                      :project-file "pom.xml"
+                                      :compile "mvn -B clean install"
+                                      :test "mvn -B test"
+                                      :run "mvn exec:java"
+                                      :test-suffix "Tests"))
+
+  (setq projectile-enable-caching t)
+  (setq projectile-indexing-method 'hybrid)
+  (setq projectile-globally-ignored-directories
+        '("*dist"
+          "target"
+          ".imgs"
+          "*node_modules"
+          ".idea"
+          ".vscode"
+          ".ensime_cache"
+          ".eunit"
+          ".git"
+          ".hg"
+          ".fslckout"
+          "_FOSSIL_"
+          ".bzr"
+          "_darcs"
+          ".tox"
+          ".svn"
+          ".stack-work"
+          ".ccls-cache"
+          ".cache"
+          ".clangd")))
 #+end_src
+
+*** skeltor
+
+;; (use-package! skeletor)  ;;not using now
 
 ** coding / Programming
 
@@ -1002,7 +1092,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 (use-package! aggressive-indent
   :config
-  (global-aggressive-indent-mode 1))
+  (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
   :init
@@ -1012,8 +1102,6 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 (use-package! highlight-sexp
   :config
-  (setq hl-sexp-foreground-color nil
-        hl-sexp-background-color "#00253c")
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
   (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
 
@@ -1033,9 +1121,14 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
     (defun counsel-locate-cmd-es (input)
       "Return a shell command based on INPUT."
-      (format "c:/opt/localbin/es.exe  -p -r %s"
+      (format "c:/opt/localbin/es.exe  -n 30 -p -r %s"
               (counsel--elisp-to-pcre
-               (ivy--regex input t))))))
+               (ivy--regex input t)))))
+  ;;https://github.com/abo-abo/swiper/issues/1218
+  (setq ivy-dynamic-exhibit-delay-ms 500)
+  (map! :leader
+        :desc "voidtools everything search"
+        "s f" #'counsel-locate))
 #+end_src
 ** workflow helpers
 *** Wiki
@@ -1095,6 +1188,63 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
   (find-file (concat trade-journal-dir myvar/file-name)))
 #+end_src
+
+*** Zettlekasten
+
+TODO: also create link to the selected text
+#+begin_src emacs-lisp
+(defun my/zk-insert-link-into-selection(selected-file start end)
+  (if (use-region-p)
+      (let ((selected-text (buffer-substring start end)))
+        (kill-region start end)
+        (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
+                         selected-text)
+        (save-buffer)))
+  (setq mark-active nil))
+
+(defun my/zk-add-backlink (selected-file current-file)
+  (find-file (concat (projectile-project-root) selected-file))
+  (goto-char (point-max))
+  (insert "\n- ")
+  (org-insert-link 0 (concat "file:" current-file )
+                   (concat
+                    "<- "
+                    (file-name-sans-extension
+                     (file-name-nondirectory current-file))))
+  (save-buffer))
+
+(defun my/zk-add-see-also (selected-file)
+  (goto-char (point-max))
+  (insert "\n- ")
+  (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
+                   (concat
+                    "-> "
+                    (file-name-sans-extension
+                     (file-name-nondirectory selected-file))))
+  (save-buffer))
+
+(defun my/zk-embed-link-and-add-back-link()
+  (interactive)
+  (setq current-file (buffer-file-name))
+  (setq selected-file (ivy-completing-read
+                       "File : "
+                       (projectile-current-project-files)))
+  (my/zk-insert-link-into-selection selected-file (region-beginning) (region-end))
+  (my/zk-add-see-also selected-file)
+  (my/zk-add-backlink selected-file current-file))
+#+end_src
+
+(defun my/zk-insert-file-link-at-end()
+  (interactive)
+  (save-excursion
+    (save-window-excursion
+      (setq current-file (buffer-file-name))
+      (setq selected-file (ivy-completing-read
+                           "File : "
+                           (projectile-project-files (projectile-project-root))))
+      (my/zk-add-see-also selected-file)
+      (my/zk-add-backlink selected-file current-file))))
+
 
 ** Text Transformations
 *** Removing garbage chars
@@ -1304,3 +1454,9 @@ TODO: Should copy general package configs to simplify keybindings.
 (with-system windows-nt
   (cd "c:/my/tmp"))
 #+END_SRC
+
+* Config Ideas
+
+** TODO improve directory navigations with fzf
+
+https://github.com/bling/fzf.el

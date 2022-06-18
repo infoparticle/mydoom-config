@@ -17,7 +17,7 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
   ;; are the three important ones:
   ;;
   ;; + `doom-font'
@@ -40,7 +40,12 @@
   ;; available. You can either set `doom-theme' or manually load a theme with the
   ;; `load-theme' function. This is the default:
   ;;(setq doom-theme 'doom-one-light)
-  (setq doom-theme 'doom-zenburn)
+  (setq doom-theme 'doom-opera-light)
+
+;;  (setq hl-sexp-foreground-color nil
+;;        hl-sexp-background-color "#00253c") ;;dark blue
+(setq hl-sexp-foreground-color nil
+        hl-sexp-background-color "#FEF9E7") ;;light yellow
 
 (setq make-backup-files nil) ; stop creating backup~ files
 (setq auto-save-default nil) ; stop creating #autosave# files
@@ -96,13 +101,13 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
- (defun my/org/org-reformat-buffer ()
-    (interactive)
-    (when (y-or-n-p "Really format current buffer? ")
-      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
-        (erase-buffer)
-        (insert document)
-        (goto-char (point-min)))))
+(defun my/org/org-reformat-buffer ()
+   (interactive)
+   (when (y-or-n-p "Really format current buffer? ")
+     (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+       (erase-buffer)
+       (insert document)
+       (goto-char (point-min)))))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -116,18 +121,14 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (java . t)
 (dot . t)
 (sql . t)))
-
-(use-package! ob-napkin
-              :init
-              (with-eval-after-load 'ob
-  ;; Optional for syntax highlight of napkin-puml src block.
-  ;; (require 'plantuml)
-  (require 'ob-napkin)))
-
-(setq org-plantuml-jar-path (expand-file-name "~/.emacs.d/.local/jars/plantuml.jar"))
+(setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 
 ;; avoid tangling into dos eol in linux files edited using tramp
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
+
+(use-package! org-auto-tangle
+  :defer t
+  :hook (org-mode . org-auto-tangle-mode))
 
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
 ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
@@ -371,6 +372,10 @@ a separator ' -> '."
   ;; needs to be run after other hooks have acted.
   (run-at-time nil nil #'org-appear--set-elements))
 
+(use-package! org-sidebar
+
+                )
+
 (require 'url-util) ;needed for encoding spaces to %20
 
 (defun my/clean-spaces-from-path (string)
@@ -499,7 +504,7 @@ a separator ' -> '."
   (add-hook 'dired-mode-hook 'xah-dired-mode-setup)
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
 
-(use-package dired-sidebar
+(use-package! dired-sidebar
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -576,7 +581,45 @@ a separator ' -> '."
   (setq beacon-color "#666600")
   (beacon-mode 1))
 
-(use-package! skeletor)
+(with-eval-after-load 'projectile
+  (with-system windows-nt
+    (projectile-register-project-type 'maven '("pom.xml")
+                                      :project-file "pom.xml"
+                                      :compile "mvn.cmd -B clean install"
+                                      :test "mvn.cmd -B test"
+                                      :run "mvn.cmd exec:java"
+                                      :test-suffix "Tests"))
+  (with-system gnu/linux
+    (projectile-register-project-type 'maven '("pom.xml")
+                                      :project-file "pom.xml"
+                                      :compile "mvn -B clean install"
+                                      :test "mvn -B test"
+                                      :run "mvn exec:java"
+                                      :test-suffix "Tests"))
+
+  (setq projectile-enable-caching t)
+  (setq projectile-indexing-method 'hybrid)
+  (setq projectile-globally-ignored-directories
+        '("*dist"
+          "target"
+          ".imgs"
+          "*node_modules"
+          ".idea"
+          ".vscode"
+          ".ensime_cache"
+          ".eunit"
+          ".git"
+          ".hg"
+          ".fslckout"
+          "_FOSSIL_"
+          ".bzr"
+          "_darcs"
+          ".tox"
+          ".svn"
+          ".stack-work"
+          ".ccls-cache"
+          ".cache"
+          ".clangd")))
 
 (defun my/get-gist ()
   (interactive)
@@ -589,14 +632,14 @@ a separator ' -> '."
   (kill-buffer)
   (yank))
 
- (use-package! highlight-symbol
-        :defer 10
-        :bind (("M-n" . highlight-symbol-next)
-               ("M-p" . highlight-symbol-prev))
-        :init
-        (setq highlight-symbol-idle-delay 0.3)
-        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
-        (highlight-symbol-nav-mode))
+(use-package! highlight-symbol
+       :defer 10
+       :bind (("M-n" . highlight-symbol-next)
+              ("M-p" . highlight-symbol-prev))
+       :init
+       (setq highlight-symbol-idle-delay 0.3)
+       (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+       (highlight-symbol-nav-mode))
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -730,7 +773,7 @@ a separator ' -> '."
 
 (use-package! aggressive-indent
   :config
-  (global-aggressive-indent-mode 1))
+  (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
   :init
@@ -740,8 +783,6 @@ a separator ' -> '."
 
 (use-package! highlight-sexp
   :config
-  (setq hl-sexp-foreground-color nil
-        hl-sexp-background-color "#00253c")
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
   (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
 
@@ -755,9 +796,14 @@ a separator ' -> '."
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
     (defun counsel-locate-cmd-es (input)
       "Return a shell command based on INPUT."
-      (format "c:/opt/localbin/es.exe  -p -r %s"
+      (format "c:/opt/localbin/es.exe  -n 30 -p -r %s"
               (counsel--elisp-to-pcre
-               (ivy--regex input t))))))
+               (ivy--regex input t)))))
+  ;;https://github.com/abo-abo/swiper/issues/1218
+  (setq ivy-dynamic-exhibit-delay-ms 500)
+  (map! :leader
+        :desc "voidtools everything search"
+        "s f" #'counsel-locate))
 
 (map! :leader
       :desc "New journal entry"
@@ -806,6 +852,46 @@ a separator ' -> '."
                 ".org"))
 
   (find-file (concat trade-journal-dir myvar/file-name)))
+
+(defun my/zk-insert-link-into-selection(selected-file start end)
+  (if (use-region-p)
+      (let ((selected-text (buffer-substring start end)))
+        (kill-region start end)
+        (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
+                         selected-text)
+        (save-buffer)))
+  (setq mark-active nil))
+
+(defun my/zk-add-backlink (selected-file current-file)
+  (find-file (concat (projectile-project-root) selected-file))
+  (goto-char (point-max))
+  (insert "\n- ")
+  (org-insert-link 0 (concat "file:" current-file )
+                   (concat
+                    "<- "
+                    (file-name-sans-extension
+                     (file-name-nondirectory current-file))))
+  (save-buffer))
+
+(defun my/zk-add-see-also (selected-file)
+  (goto-char (point-max))
+  (insert "\n- ")
+  (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
+                   (concat
+                    "-> "
+                    (file-name-sans-extension
+                     (file-name-nondirectory selected-file))))
+  (save-buffer))
+
+(defun my/zk-embed-link-and-add-back-link()
+  (interactive)
+  (setq current-file (buffer-file-name))
+  (setq selected-file (ivy-completing-read
+                       "File : "
+                       (projectile-current-project-files)))
+  (my/zk-insert-link-into-selection selected-file (region-beginning) (region-end))
+  (my/zk-add-see-also selected-file)
+  (my/zk-add-backlink selected-file current-file))
 
 (defun my/replace-garbage-chars ()
 "Replace non-rendering MS and other garbage characters with latin1 equivalents."
