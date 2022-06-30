@@ -17,7 +17,7 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
   ;; are the three important ones:
   ;;
   ;; + `doom-font'
@@ -101,17 +101,18 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
-(defun my/org/org-reformat-buffer ()
-   (interactive)
-   (when (y-or-n-p "Really format current buffer? ")
-     (let ((document (org-element-interpret-data (org-element-parse-buffer))))
-       (erase-buffer)
-       (insert document)
-       (goto-char (point-min)))))
+ (defun my/org/org-reformat-buffer ()
+    (interactive)
+    (when (y-or-n-p "Really format current buffer? ")
+      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+        (erase-buffer)
+        (insert document)
+        (goto-char (point-min)))))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
 '((python . t)
+(ipython . t)
 (shell . t)
 (ledger . t)
 (plantuml . t)
@@ -135,6 +136,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
 (use-package! doct
+  :defer t
   :demand t
   :commands (doct)
   :init (setq org-capture-templates
@@ -168,11 +170,14 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                       ("Journal"
                        :keys "j"
                        :prepend t
-                       :children (("general"
-                                   :keys "g"
-                                   :file "~/org/journal/general-journal.org"
+                       :children (("private journal"
+                                   :keys "p"
+                                   :file "c:/my/org-0.10.d/private/journal/yearly-journal.org.gpg"
                                    :template ("* %?" "%U")
-                                   :datetree t)
+                                   :datetree t
+                                   :time-prompt t
+                                   :unnarrowed  t
+                                   )
                                   ("apm-journal"
                                    :keys "a"
                                    :file "c:/my/work/apm-bpm/apmbpm.git/private/agenda/apm-journal.org"
@@ -229,6 +234,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (setq org-crypt-key nil)
 
 (use-package! org-super-agenda
+  :defer t
   :commands org-super-agenda-mode)
 
 (after! org-agenda
@@ -305,10 +311,15 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                            :order 90)
                           (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
 
-(use-package! atomic-chrome)
+(use-package! atomic-chrome
+  :defer t
+ )
 
-(use-package! org-id)
+(use-package! org-id
+  :defer t
+  )
 (use-package! org-super-links
+  :defer t
     :bind (("C-c s s" . org-super-links-link)
          ("C-c s l" . org-super-links-store-link)
          ("C-c s C-l" . org-super-links-insert-link)
@@ -363,6 +374,8 @@ a separator ' -> '."
   )
 
 (use-package! org-appear
+  :defer         t
+
   :hook (org-mode . org-appear-mode)
   :config
   (setq  org-appear-autoemphasis t
@@ -373,7 +386,7 @@ a separator ' -> '."
   (run-at-time nil nil #'org-appear--set-elements))
 
 (use-package! org-sidebar
-
+  :defer         t
                 )
 
 (require 'url-util) ;needed for encoding spaces to %20
@@ -452,23 +465,6 @@ a separator ' -> '."
     )
   )
 
-(setq org-roam-directory "c:/my/org-roam")
-
-(use-package! websocket
-    :after org-roam)
-
-(use-package! org-roam-ui
-    :after org-roam ;; or :after org
-;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
-;;         a hookable mode anymore, you're advised to pick something yourself
-;;         if you don't care about startup time, use
-;;  :hook (after-init . org-roam-ui-mode)
-    :config
-    (setq org-roam-ui-sync-theme t
-          org-roam-ui-follow t
-          org-roam-ui-update-on-save t
-          org-roam-ui-open-on-start t))
-
 (with-system windows-nt
   (setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
   (setq ispell-hunspell-dict-paths-alist
@@ -479,6 +475,116 @@ a separator ' -> '."
       '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
 
 (setq text-mode-hook '(lambda() (flyspell-mode t)))
+
+(with-system windows-nt
+  (require 'epa-file)
+  (epa-file-enable)
+  (setq-local epa-file-encrypt-to '("emacsuser@localhost"))
+  (custom-set-variables '(epg-gpg-program  "C:/Program Files (x86)/GnuPG/bin/gpg.exe"))
+  (custom-set-variables '(epg-gpgconf-program  "C:/Program Files (x86)/GnuPG/bin/gpgconf.exe"))
+  (custom-set-variables '(epg-gpg-home-directory  "c:/Users/gopinat/AppData/Roaming/gnupg"))
+  (defadvice epg--start (around advice-epg-disable-agent disable)
+    "Make epg--start not able to find a gpg-agent."
+    (let ((agent (getenv "GPG_AGENT_INFO")))
+      (setenv "GPG_AGENT_INFO" nil)
+      ad-do-it
+      (setenv "GPG_AGENT_INFO" agent)))
+
+  (defun epg-disable-agent ()
+    "Make EasyPG bypass any gpg-agent."
+    (interactive)
+    (ad-enable-advice 'epg--start 'around 'advice-epg-disable-agent)
+    (ad-activate 'epg--start)
+    (message "EasyPG gpg-agent bypassed"))
+
+  (defun epg-enable-agent ()
+    "Make EasyPG use a gpg-agent after having been disabled with epg-disable-agent."
+    (interactive)
+    (ad-disable-advice 'epg--start 'around 'advice-epg-disable-agent)
+    (ad-activate 'epg--start)
+    (message "EasyPG gpg-agent re-enabled")))
+
+(use-package! popper
+  :bind (("C-\\"   . popper-toggle-latest)
+         ("M-\\"   . popper-cycle)
+         ("M-~"   . popper-kill-latest-popup)
+         ("C-M-\\" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
+
+(use-package! pulsar
+  :config
+  (setq pulsar-pulse-functions
+        ;; NOTE 2022-04-09: The commented out functions are from before
+        ;; the introduction of `pulsar-pulse-on-window-change'.  Try that
+        ;; instead.
+        '(recenter-top-bottom
+          move-to-window-line-top-bottom
+          reposition-window
+          bookmark-jump
+          other-window
+          delete-window
+          delete-other-windows
+          forward-page
+          backward-page
+          scroll-up-command
+          scroll-down-command
+          ;; windmove-right
+          ;; windmo     ve-left
+          ;; windmove-up
+          ;; windmove-down
+          ;; windmove-swap-states-right
+          ;; windmove-swap-states-left
+          ;; windmove-swap-states-up
+          ;; windmove-swap-states-down
+          tab-new
+          tab-close
+          tab-next
+          org-next-visible-heading
+          org-previous-visible-heading
+          org-forward-heading-same-level
+          org-backward-heading-same-level
+          outline-backward-same-level
+          outline-forward-same-level
+          outline-next-visible-heading
+          outline-previous-visible-heading
+          outline-up-heading))
+
+  (setq pulsar-pulse-on-window-change t)
+  (setq pulsar-pulse t)
+  (setq pulsar-delay 0.055)
+  (setq pulsar-iterations 10)
+  (setq pulsar-face 'pulsar-green)
+  (setq pulsar-highlight-face 'pulsar-yellow)
+
+  (pulsar-global-mode 1)
+
+  ;; OR use the local mode for select mode hooks
+
+  (dolist (hook '(org-mode-hook emacs-lisp-mode-hook))
+    (add-hook hook #'pulsar-mode))
+
+  ;; pulsar does not define any key bindings.  This is just a sample that
+  ;; respects the key binding conventions.  Evaluate:
+  ;;
+  ;;     (info "(elisp) Key Binding Conventions")
+  ;;
+  ;; The author uses C-x l for `pulsar-pulse-line' and C-x L for
+  ;; `pulsar-highlight-line'.
+  ;;
+  ;; You can replace `pulsar-highlight-line' with the command
+  ;; `pulsar-highlight-dwim'.
+  (let ((map global-map))
+    (define-key map (kbd "C-c h p") #'pulsar-pulse-line)
+    (define-key map (kbd "C-c h h") #'pulsar-highlight-line))
+  )
 
 (use-package! super-save
   :config
@@ -505,6 +611,7 @@ a separator ' -> '."
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
 
 (use-package! dired-sidebar
+  :defer t
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -574,13 +681,6 @@ a separator ' -> '."
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
-(use-package! beacon
-  :defer t
-  :config
-  (setq beacon-push-mark 35)
-  (setq beacon-color "#666600")
-  (beacon-mode 1))
-
 (with-eval-after-load 'projectile
   (with-system windows-nt
     (projectile-register-project-type 'maven '("pom.xml")
@@ -621,6 +721,19 @@ a separator ' -> '."
           ".cache"
           ".clangd")))
 
+(use-package! company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+(use-package! company-box
+  :hook (company-mode . company-box-mode))
+
 (defun my/get-gist ()
   (interactive)
   (find-file "~/emacstools/code-gists/my-code-gists.org")
@@ -632,14 +745,14 @@ a separator ' -> '."
   (kill-buffer)
   (yank))
 
-(use-package! highlight-symbol
-       :defer 10
-       :bind (("M-n" . highlight-symbol-next)
-              ("M-p" . highlight-symbol-prev))
-       :init
-       (setq highlight-symbol-idle-delay 0.3)
-       (add-hook 'prog-mode-hook 'highlight-symbol-mode)
-       (highlight-symbol-nav-mode))
+ (use-package! highlight-symbol
+        :defer 10
+        :bind (("M-n" . highlight-symbol-next)
+               ("M-p" . highlight-symbol-prev))
+        :init
+        (setq highlight-symbol-idle-delay 0.3)
+        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+        (highlight-symbol-nav-mode))
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -679,6 +792,9 @@ a separator ' -> '."
 
 (use-package ivy-yasnippet
   :bind ("C-c y" . ivy-yasnippet))
+
+(when (executable-find "ipython")
+  (setq python-shell-interpreter "ipython"))
 
 (with-system windows-nt
   (setq JAVA_BASE "c:/opt/jdks"))
@@ -772,10 +888,12 @@ a separator ' -> '."
   (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
 
 (use-package! aggressive-indent
+  :defer t
   :config
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
+  :defer t
   :init
   (with-system windows-nt
     (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe"))
@@ -790,6 +908,34 @@ a separator ' -> '."
   :config
   (symex-initialize)
   (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
+
+(use-package! rustic
+  :bind (:map rustic-mode-map
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status))
+  :config
+  ;; uncomment for less flashiness
+  ;; (setq lsp-eldoc-hook nil)
+  ;; (setq lsp-enable-symbol-highlighting nil)
+  ;; (setq lsp-signature-auto-activate nil)
+
+  ;; comment to disable rustfmt on save
+  (setq rustic-format-on-save t)
+  (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+
+(defun rk/rustic-mode-hook ()
+  ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+  ;; save rust buffers that are not file visiting. Once
+  ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+  ;; no longer be necessary.
+  (when buffer-file-name
+    (setq-local buffer-save-without-query t)))
 
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
@@ -1046,12 +1192,19 @@ a separator ' -> '."
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
+(defun my/open/org-second-brain ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
+
+
 
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
       "1" #'my/open/work-rum-standup-org
+      "2" #'my/open/org-second-brain
       )
 
 (with-system windows-nt

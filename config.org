@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jun 18, 2022 Sat"
+Last Saved: "Jun 30, 2022 Thu"
 
 *** Table of contents :TOC_7:
 - [[#my-config][My Config]]
@@ -31,6 +31,9 @@ Last Saved: "Jun 18, 2022 Sat"
     - [[#org-transclusion][org-transclusion]]
     - [[#spell-check][spell check]]
   - [[#functionality][Functionality]]
+    - [[#gnupg-gpg][GnuPG-gpg]]
+    - [[#popper][popper]]
+    - [[#pulsar][pulsar]]
     - [[#super-save][Super-save]]
     - [[#dired][dired]]
     - [[#dired-sidebar][dired-sidebar]]
@@ -40,14 +43,17 @@ Last Saved: "Jun 18, 2022 Sat"
   - [[#project-management][Project Management]]
     - [[#skeltor][skeltor]]
   - [[#coding--programming][coding / Programming]]
+    - [[#company][company]]
     - [[#gist-managment][gist managment]]
     - [[#highlight-symbols][highlight symbols]]
     - [[#managing-info-files][Managing info files]]
     - [[#yas-snippet][yas-snippet]]
     - [[#personal-info-help-pages][personal info help pages]]
+    - [[#python][python]]
     - [[#java][java]]
     - [[#lsp-java][lsp-java]]
     - [[#lisp-programming][lisp programming]]
+    - [[#rust-programming---rustic][rust programming - rustic]]
   - [[#voidtools][Voidtools]]
   - [[#workflow-helpers][workflow helpers]]
     - [[#wiki][Wiki]]
@@ -216,11 +222,11 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
   ;; (require 'plantuml)
   (require 'ob-napkin)))
 
-
 #+begin_src emacs-lisp
 (org-babel-do-load-languages
 'org-babel-load-languages
 '((python . t)
+(ipython . t)
 (shell . t)
 (ledger . t)
 (plantuml . t)
@@ -250,6 +256,7 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
 (use-package! doct
+  :defer t
   :demand t
   :commands (doct)
   :init (setq org-capture-templates
@@ -283,11 +290,14 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
                       ("Journal"
                        :keys "j"
                        :prepend t
-                       :children (("general"
-                                   :keys "g"
-                                   :file "~/org/journal/general-journal.org"
+                       :children (("private journal"
+                                   :keys "p"
+                                   :file "c:/my/org-0.10.d/private/journal/yearly-journal.org.gpg"
                                    :template ("* %?" "%U")
-                                   :datetree t)
+                                   :datetree t
+                                   :time-prompt t
+                                   :unnarrowed  t
+                                   )
                                   ("apm-journal"
                                    :keys "a"
                                    :file "c:/my/work/apm-bpm/apmbpm.git/private/agenda/apm-journal.org"
@@ -363,6 +373,7 @@ cfw-org-calendar
 
 #+begin_src emacs-lisp
 (use-package! org-super-agenda
+  :defer t
   :commands org-super-agenda-mode)
 
 (after! org-agenda
@@ -447,13 +458,18 @@ cfw-org-calendar
 
 #+begin_src emacs-lisp
 
-(use-package! atomic-chrome)
+(use-package! atomic-chrome
+  :defer t
+ )
 #+end_src
 
 *** Org super links
 #+begin_src emacs-lisp
-(use-package! org-id)
+(use-package! org-id
+  :defer t
+  )
 (use-package! org-super-links
+  :defer t
     :bind (("C-c s s" . org-super-links-link)
          ("C-c s l" . org-super-links-store-link)
          ("C-c s C-l" . org-super-links-insert-link)
@@ -522,6 +538,8 @@ a separator ' -> '."
 
 #+begin_src emacs-lisp
 (use-package! org-appear
+  :defer         t
+
   :hook (org-mode . org-appear-mode)
   :config
   (setq  org-appear-autoemphasis t
@@ -535,7 +553,7 @@ a separator ' -> '."
 *** org-sidebar
 #+BEGIN_SRC emacs-lisp
 (use-package! org-sidebar
-
+  :defer         t
                 )
 #+END_SRC
 
@@ -625,13 +643,14 @@ a separator ' -> '."
 #+end_src
 
 *** org-roam and org-roam-ui
-#+begin_src emacs-lisp
 (setq org-roam-directory "c:/my/org-roam")
 
 (use-package! websocket
+  :defer         t
     :after org-roam)
 
 (use-package! org-roam-ui
+  :defer         t
     :after org-roam ;; or :after org
 ;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
 ;;         a hookable mode anymore, you're advised to pick something yourself
@@ -642,7 +661,6 @@ a separator ' -> '."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
-#+end_src
 *** org-transclusion
 
 #+begin_example
@@ -677,6 +695,125 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 ** Functionality
 
+*** GnuPG-gpg
+
+#+BEGIN_SRC emacs-lisp
+(with-system windows-nt
+  (require 'epa-file)
+  (epa-file-enable)
+  (setq-local epa-file-encrypt-to '("emacsuser@localhost"))
+  (custom-set-variables '(epg-gpg-program  "C:/Program Files (x86)/GnuPG/bin/gpg.exe"))
+  (custom-set-variables '(epg-gpgconf-program  "C:/Program Files (x86)/GnuPG/bin/gpgconf.exe"))
+  (custom-set-variables '(epg-gpg-home-directory  "c:/Users/gopinat/AppData/Roaming/gnupg"))
+  (defadvice epg--start (around advice-epg-disable-agent disable)
+    "Make epg--start not able to find a gpg-agent."
+    (let ((agent (getenv "GPG_AGENT_INFO")))
+      (setenv "GPG_AGENT_INFO" nil)
+      ad-do-it
+      (setenv "GPG_AGENT_INFO" agent)))
+
+  (defun epg-disable-agent ()
+    "Make EasyPG bypass any gpg-agent."
+    (interactive)
+    (ad-enable-advice 'epg--start 'around 'advice-epg-disable-agent)
+    (ad-activate 'epg--start)
+    (message "EasyPG gpg-agent bypassed"))
+
+  (defun epg-enable-agent ()
+    "Make EasyPG use a gpg-agent after having been disabled with epg-disable-agent."
+    (interactive)
+    (ad-disable-advice 'epg--start 'around 'advice-epg-disable-agent)
+    (ad-activate 'epg--start)
+    (message "EasyPG gpg-agent re-enabled")))
+#+END_SRC
+*** popper
+
+#+BEGIN_SRC emacs-lisp
+(use-package! popper
+  :bind (("C-\\"   . popper-toggle-latest)
+         ("M-\\"   . popper-cycle)
+         ("M-~"   . popper-kill-latest-popup)
+         ("C-M-\\" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "Output\\*$"
+          "\\*Async Shell Command\\*"
+          help-mode
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
+#+END_SRC
+
+*** pulsar
+#+BEGIN_SRC emacs-lisp
+(use-package! pulsar
+  :config
+  (setq pulsar-pulse-functions
+        ;; NOTE 2022-04-09: The commented out functions are from before
+        ;; the introduction of `pulsar-pulse-on-window-change'.  Try that
+        ;; instead.
+        '(recenter-top-bottom
+          move-to-window-line-top-bottom
+          reposition-window
+          bookmark-jump
+          other-window
+          delete-window
+          delete-other-windows
+          forward-page
+          backward-page
+          scroll-up-command
+          scroll-down-command
+          ;; windmove-right
+          ;; windmo     ve-left
+          ;; windmove-up
+          ;; windmove-down
+          ;; windmove-swap-states-right
+          ;; windmove-swap-states-left
+          ;; windmove-swap-states-up
+          ;; windmove-swap-states-down
+          tab-new
+          tab-close
+          tab-next
+          org-next-visible-heading
+          org-previous-visible-heading
+          org-forward-heading-same-level
+          org-backward-heading-same-level
+          outline-backward-same-level
+          outline-forward-same-level
+          outline-next-visible-heading
+          outline-previous-visible-heading
+          outline-up-heading))
+
+  (setq pulsar-pulse-on-window-change t)
+  (setq pulsar-pulse t)
+  (setq pulsar-delay 0.055)
+  (setq pulsar-iterations 10)
+  (setq pulsar-face 'pulsar-green)
+  (setq pulsar-highlight-face 'pulsar-yellow)
+
+  (pulsar-global-mode 1)
+
+  ;; OR use the local mode for select mode hooks
+
+  (dolist (hook '(org-mode-hook emacs-lisp-mode-hook))
+    (add-hook hook #'pulsar-mode))
+
+  ;; pulsar does not define any key bindings.  This is just a sample that
+  ;; respects the key binding conventions.  Evaluate:
+  ;;
+  ;;     (info "(elisp) Key Binding Conventions")
+  ;;
+  ;; The author uses C-x l for `pulsar-pulse-line' and C-x L for
+  ;; `pulsar-highlight-line'.
+  ;;
+  ;; You can replace `pulsar-highlight-line' with the command
+  ;; `pulsar-highlight-dwim'.
+  (let ((map global-map))
+    (define-key map (kbd "C-c h p") #'pulsar-pulse-line)
+    (define-key map (kbd "C-c h h") #'pulsar-highlight-line))
+  )
+#+END_SRC
 *** Super-save
 #+begin_src emacs-lisp
 (use-package! super-save
@@ -715,6 +852,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 #+begin_src emacs-lisp
 (use-package! dired-sidebar
+  :defer t
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -797,15 +935,12 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 *** beacon
 
-#+begin_src emacs-lisp
 (use-package! beacon
   :defer t
   :config
   (setq beacon-push-mark 35)
   (setq beacon-color "#666600")
   (beacon-mode 1))
-#+end_src
-
 
 (use-package! hl-line+
   :hook
@@ -891,7 +1026,22 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 ;; (use-package! skeletor)  ;;not using now
 
 ** coding / Programming
+*** company
+#+BEGIN_SRC emacs-lisp
+(use-package! company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+        (:map lsp-mode-map
+         ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+(use-package! company-box
+  :hook (company-mode . company-box-mode))
 
+#+END_SRC
 *** gist managment
 #+begin_src emacs-lisp
 (defun my/get-gist ()
@@ -975,7 +1125,12 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 (require 'info)
 (info-initialize)
 (push my-info-dir Info-directory-list)
+*** python
 
+#+begin_src emacs-lisp :tangle yes
+(when (executable-find "ipython")
+  (setq python-shell-interpreter "ipython"))
+#+end_src
 *** java
 
 #+begin_src emacs-lisp
@@ -1075,6 +1230,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 (after! lsp-mode
   (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
 #+END_SRC
+
 *** lisp programming
 
 ;;I don't like rainbow-delimiters
@@ -1091,10 +1247,12 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 #+begin_src emacs-lisp
 
 (use-package! aggressive-indent
+  :defer t
   :config
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
+  :defer t
   :init
   (with-system windows-nt
     (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe"))
@@ -1113,6 +1271,38 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 #+RESULTS:
 : sly
+
+*** rust programming - rustic
+
+#+BEGIN_SRC emacs-lisp
+(use-package! rustic
+  :bind (:map rustic-mode-map
+              ("M-j" . lsp-ui-imenu)
+              ("M-?" . lsp-find-references)
+              ("C-c C-c l" . flycheck-list-errors)
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status))
+  :config
+  ;; uncomment for less flashiness
+  ;; (setq lsp-eldoc-hook nil)
+  ;; (setq lsp-enable-symbol-highlighting nil)
+  ;; (setq lsp-signature-auto-activate nil)
+
+  ;; comment to disable rustfmt on save
+  (setq rustic-format-on-save t)
+  (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
+
+(defun rk/rustic-mode-hook ()
+  ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+  ;; save rust buffers that are not file visiting. Once
+  ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+  ;; no longer be necessary.
+  (when buffer-file-name
+    (setq-local buffer-save-without-query t)))
+#+END_SRC
 
 ** Voidtools
 #+begin_src emacs-lisp
@@ -1439,12 +1629,19 @@ TODO: Should copy general package configs to simplify keybindings.
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
+(defun my/open/org-second-brain ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
+
+
 
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
       "1" #'my/open/work-rum-standup-org
+      "2" #'my/open/org-second-brain
       )
 #+end_src
 

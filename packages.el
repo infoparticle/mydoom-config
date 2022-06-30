@@ -69,8 +69,12 @@
 ;;(unpin! org-roam)
 ;;(package! org-roam-ui)
 (package! org-auto-tangle)
-(package! beacon)
+(package! ob-ipython)
+
+(package! pulsar)
 ;;(package! hl-line+)
+(package! company-box)
+(package! popper)
 
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
@@ -94,3 +98,5 @@
 (package! aggressive-indent)
 (package! symex)
 (package! all-the-icons :disable t)
+
+(package! rustic)
