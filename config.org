@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jun 30, 2022 Thu"
+Last Saved: "Jul 16, 2022 Sat"
 
 *** Table of contents :TOC_7:
 - [[#my-config][My Config]]
@@ -29,8 +29,11 @@ Last Saved: "Jun 30, 2022 Thu"
     - [[#screenshot-for-chart-gallery][screenshot for chart gallery]]
     - [[#org-roam-and-org-roam-ui][org-roam and org-roam-ui]]
     - [[#org-transclusion][org-transclusion]]
+    - [[#org-reveal][org-reveal]]
+    - [[#org-present][org-present]]
     - [[#spell-check][spell check]]
   - [[#functionality][Functionality]]
+    - [[#scratch][scratch]]
     - [[#gnupg-gpg][GnuPG-gpg]]
     - [[#popper][popper]]
     - [[#pulsar][pulsar]]
@@ -38,11 +41,13 @@ Last Saved: "Jun 30, 2022 Thu"
     - [[#dired][dired]]
     - [[#dired-sidebar][dired-sidebar]]
     - [[#sidebar][sidebar]]
+    - [[#speed-type][speed-type]]
   - [[#ui-stuff][UI Stuff]]
     - [[#beacon][beacon]]
   - [[#project-management][Project Management]]
     - [[#skeltor][skeltor]]
   - [[#coding--programming][coding / Programming]]
+    - [[#iedit][iedit]]
     - [[#company][company]]
     - [[#gist-managment][gist managment]]
     - [[#highlight-symbols][highlight symbols]]
@@ -51,6 +56,7 @@ Last Saved: "Jun 30, 2022 Thu"
     - [[#personal-info-help-pages][personal info help pages]]
     - [[#python][python]]
     - [[#java][java]]
+    - [[#vterm][vterm]]
     - [[#lsp-java][lsp-java]]
     - [[#lisp-programming][lisp programming]]
     - [[#rust-programming---rustic][rust programming - rustic]]
@@ -135,14 +141,16 @@ Get all fonts present
 
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
-(setq hl-sexp-foreground-color nil
-        hl-sexp-background-color "#FEF9E7") ;;light yellow
+;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 
+(setq hl-sexp-foreground-color nil
+      hl-sexp-background-color "#FEF9E7") ;;light yellow
 #+end_src
 
 *** Others
 
 #+begin_src emacs-lisp
+(setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
 (setq auto-save-default nil) ; stop creating #autosave# files
 (setq create-lockfiles nil)
@@ -183,6 +191,7 @@ Get all fonts present
 #+end_src
 
 ** Org mode
+
 *** Time Stamp and basic org defaults
 
 #+begin_src emacs-lisp
@@ -198,9 +207,24 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 ;; https://emacs.stackexchange.com/questions/62720/open-org-link-in-the-same-window
 ;; https://emacs.stackexchange.com/questions/16652/change-the-behavior-of-org-mode-auto-expand-relative-path-in-link
 (after! org
-  (setq org-hide-emphasis-markers t)
-  (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
+  (setq
+   org-adapt-indentation t
+   org-cycle-separator-lines -1
+   org-ellipsis "  \u2935"
+   org-hide-emphasis-markers t
+   org-hide-leading-stars t
+   org-indent-indentation-per-level 2
+   org-link-file-path-type 'relative ;; insert relative links in org-insert-link
+   ;;org-odd-levels-only t
+   org-src-fontify-natively t
+   org-src-preserve-indentation t
+   org-src-window-setup 'current-window
+   org-startup-indented t
+   org-tags-column 50)
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
+
+(add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
+
 #+end_src
 *** org formatter
 #+begin_src emacs-lisp
@@ -230,11 +254,13 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 (shell . t)
 (ledger . t)
 (plantuml . t)
-(napkin . t)
+;(napkin . t)
+(lisp . t)
 (gnuplot . t)
 (haskell . t)
 (java . t)
 (dot . t)
+(restclient . t)
 (sql . t)))
 (setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 
@@ -674,6 +700,98 @@ a separator ' -> '."
    :prefix "n"
    :desc "Org Transclusion Mode" "t" #'org-transclusion-mode))
 #+end_example
+*** org-reveal
+
+#+begin_src emacs-lisp
+(use-package! ox-reveal)
+#+end_src
+
+*** org-present
+
+https://systemcrafters.net/emacs-tips/presentations-with-org-present/
+
+(setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
+                                   (header-line (:height 4.0) variable-pitch)
+                                   (org-document-title (:height 1.75) org-document-title)
+                                   (org-code (:height 1.55) org-code)
+                                   (org-verbatim (:height 1.55) org-verbatim)
+                                   (org-block (:height 1.25) org-block)
+                                   (org-block-begin-line (:height 0.7) org-block)))
+#+BEGIN_SRC emacs-lisp
+(defvar bigger-org-headlines-cookies nil)
+
+(make-variable-buffer-local 'bigger-org-headlines-cookies)
+
+(define-minor-mode bigger-org-headlines
+  "Make Org headlines bigger."
+  :lighter " Big-Org-Headlines"
+  (if bigger-org-headlines
+      (mapc (lambda (face)
+              (push (face-remap-add-relative face :height 2.5)
+                    bigger-org-headlines-cookies))
+            (cons 'org-link org-level-faces))
+    (mapc #'face-remap-remove-relative bigger-org-headlines-cookies)
+    (setq bigger-org-headlines-cookies nil))
+  (force-window-update (current-buffer)))
+
+
+;; Configure fill width
+(setq visual-fill-column-width 110
+      visual-fill-column-center-text t)
+
+(setq org-present-text-scale 3)
+
+(defun my/org-present-start ()
+  ;; Center the presentation and wrap lines
+  (setq visual-fill-column-width 110
+        visual-fill-column-center-text t)
+  (flyspell-mode 0)
+  (org-present-read-only)
+  (bigger-org-headlines 1)
+  (org-present-hide-cursor)
+  ;(org-present-big)
+  (hide-mode-line-mode 1)
+  (visual-fill-column-mode 1)
+  (visual-line-mode 1)
+  (tab-bar-mode 0)
+  (hl-line-mode 0)
+  ;(text-scale-increase org-present-text-scale)
+  )
+
+(defun my/org-present-end ()
+  ;; Stop centering the document
+  (visual-fill-column-mode 0)
+  (visual-line-mode 0)
+                                        ;(setq-local face-remapping-alist '((default variable-pitch default)))
+  (org-present-read-write)
+  (org-present-small)
+  (org-present-show-cursor)
+  (bigger-org-headlines 0)
+  (hide-mode-line-mode 0)
+  (tab-bar-mode 1)
+  (hl-line-mode 1)
+  )
+
+;; Register hooks with org-present
+(add-hook 'org-present-mode-hook 'my/org-present-start)
+(add-hook 'org-present-mode-quit-hook 'my/org-present-end)
+
+(defun my/org-present-prepare-slide (buffer-name heading)
+  ;; Show only top-level headlines
+  (org-overview)
+
+  ;; Unfold the current entry
+  (org-show-entry)
+
+  ;; Show only direct subheadings of the slide but don't expand them
+  (org-show-children))
+
+(add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide)
+
+#+END_SRC
+
+#+RESULTS:
+| my/org-present-prepare-slide |
 
 *** spell check
 
@@ -694,7 +812,10 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 
 ** Functionality
-
+*** scratch
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
+#+END_SRC
 *** GnuPG-gpg
 
 #+BEGIN_SRC emacs-lisp
@@ -927,6 +1048,11 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 #+results:
 : m/toggleindex-private
 
+*** speed-type
+#+BEGIN_SRC emacs-lisp
+(use-package! speed-type)
+#+END_SRC
+
 ** UI Stuff
 #+begin_src emacs-lisp
 ;(doom-themes-neotree-config)
@@ -1026,6 +1152,10 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 ;; (use-package! skeletor)  ;;not using now
 
 ** coding / Programming
+*** iedit
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-M-i") 'iedit-mode)
+#+END_SRC
 *** company
 #+BEGIN_SRC emacs-lisp
 (use-package! company
@@ -1044,16 +1174,27 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 #+END_SRC
 *** gist managment
 #+begin_src emacs-lisp
-(defun my/get-gist ()
+(defun my/get-gist (filepath)
   (interactive)
-  (find-file "~/emacstools/code-gists/my-code-gists.org")
+  (find-file filepath)
   (counsel-org-goto)
   (search-forward "#+begin_src")
   (org-edit-src-code)
   (clipboard-kill-region (point-min) (point-max))
   (org-edit-src-abort)
-  (kill-buffer)
+  ;(kill-buffer)
+  (previous-buffer)
   (yank))
+
+(defun my/get-gist-all()
+  (interactive)
+  (my/get-gist "~/emacstools/code-gists/code-gists-all.org")
+  )
+
+(defun my/get-gist-python()
+  (interactive)
+  (my/get-gist "~/emacstools/code-gists/code-gists.python.org")
+  )
 #+end_src
 
 *** highlight symbols
@@ -1208,8 +1349,20 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
         (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
+
 #+end_src
 
+(defun nushell (&optional buffer)
+  "Launches a nu-shell in buffer *nu-shell* and switches to it."
+  (interactive)
+  (let ((buffer (or buffer "*nu-shell*"))
+        (nu-shell-prog "C:/Program Files/nu/bin/nu.exe"))
+    (make-comint-in-buffer "shell" "*nu-shell*" nu-shell-prog)
+    (switch-to-buffer buffer)))
+
+*** vterm
+(add-to-list 'load-path "c:\\opt\\emacs-libvterm\\")
+(use-package vterm)
 *** lsp-java
 
 #+BEGIN_SRC emacs-lisp
@@ -1245,17 +1398,16 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 
 
 #+begin_src emacs-lisp
-
 (use-package! aggressive-indent
   :defer t
   :config
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
-  :defer t
   :init
   (with-system windows-nt
-    (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe"))
+   (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
+    (setq inferior-lisp-program "sbcl"))
   (add-hook 'lisp-mode-hook 'sly-mode))
 
 (use-package! highlight-sexp
@@ -1629,18 +1781,21 @@ TODO: Should copy general package configs to simplify keybindings.
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
+(defun my/open/work-rum-tasks ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/rum-tasks.org"))
+
+
 (defun my/open/org-second-brain ()
   (interactive)
   (split-window-right)
   (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
 
-
-
-
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
-      "1" #'my/open/work-rum-standup-org
+      "1" #'my/open/work-rum-tasks
       "2" #'my/open/org-second-brain
       )
 #+end_src

@@ -1,0 +1,67 @@
+
+
+ref
+- https://www.onwebsecurity.com/configuration/compile-emacs-for-windows-using-msys2-and-mingw64.html
+- https://gist.github.com/nauhygon/f3b44f51b34e89bc54f8
+
+  #+begin_src
+    --host=x86_64-w64-mingw32 \
+    --target=x86_64-w64-mingw32 \
+    --build=x86_64-w64-mingw32 \
+
+  #+end_src
+
+  #+begin_src
+../emacs/configure \
+    --host=x86_64-w64-mingw32 \
+    --target=x86_64-w64-mingw32 \
+    --build=x86_64-w64-mingw32 \
+    --with-native-compilation \
+    --with-gnutls \
+    --with-imagemagick \
+    --with-jpeg \
+    --with-json \
+    --with-png \
+    --with-rsvg \
+    --with-tiff \
+    --with-wide-int \
+    --with-xft \
+    --with-xml2 \
+    --with-xpm \
+    'CFLAGS=-I/mingw64/include/noX' \
+    prefix=$target
+
+  #+end_src
+
+
+
+- https://readingworldmagazine.com/emacs/2022-02-24-compiling-emacs-29-from-source-on-windows/
+
+
+#+begin_src
+
+./configure  \
+  --prefix=/c/emacs-29  \
+  --with-native-compilation  \
+  --with-gnutls  \
+  --with-jpeg  \
+  --with-png  \
+  --with-rsvg  \
+  --with-tiff  \
+  --with-wide-int  \
+  --with-xft  \
+  --with-xml2  \
+  --with-xpm  \
+  --without-dbus  \
+  --with-imagemagick  \
+  --without-pop
+
+#+end_src
+
+** My commands
+
+#+begin_src
+ pacman -Syy mingw-w64-x86_64-gnutls
+mingw-w64-x86_64-jansson
+
+#+end_src

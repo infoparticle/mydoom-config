@@ -70,6 +70,7 @@
 ;;(package! org-roam-ui)
 (package! org-auto-tangle)
 (package! ob-ipython)
+;;(package! vterm)
 
 (package! pulsar)
 ;;(package! hl-line+)
@@ -82,6 +83,9 @@
 ;;(package! ob-napkin)
 (package! org-super-agenda)
 (package! org-sidebar)
+(package! org-present)
+(package! visual-fill-column)
+(package! ox-reveal)
 
 ;;(package! skeletor)
 (package! super-save)
@@ -92,11 +96,15 @@
 (package! ivy-yasnippet)
 (package! highlight-symbol)
 
-(package! sly)
+;(package! sly)
 (package! highlight-sexp)
 (package! paren-face)
 (package! aggressive-indent)
 (package! symex)
 (package! all-the-icons :disable t)
+(package! speed-type)
 
 (package! rustic)
+;;(package! slime)
+(package! restclient)
+(package! ob-restclient)

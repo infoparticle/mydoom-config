@@ -17,7 +17,7 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
   ;; are the three important ones:
   ;;
   ;; + `doom-font'
@@ -44,9 +44,12 @@
 
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
-(setq hl-sexp-foreground-color nil
-        hl-sexp-background-color "#FEF9E7") ;;light yellow
+;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 
+(setq hl-sexp-foreground-color nil
+      hl-sexp-background-color "#FEF9E7") ;;light yellow
+
+(setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
 (setq auto-save-default nil) ; stop creating #autosave# files
 (setq create-lockfiles nil)
@@ -97,17 +100,31 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 ;; https://emacs.stackexchange.com/questions/62720/open-org-link-in-the-same-window
 ;; https://emacs.stackexchange.com/questions/16652/change-the-behavior-of-org-mode-auto-expand-relative-path-in-link
 (after! org
-  (setq org-hide-emphasis-markers t)
-  (setq org-link-file-path-type 'relative) ;; insert relative links in org-insert-link
+  (setq
+   org-adapt-indentation t
+   org-cycle-separator-lines -1
+   org-ellipsis "  \u2935"
+   org-hide-emphasis-markers t
+   org-hide-leading-stars t
+   org-indent-indentation-per-level 2
+   org-link-file-path-type 'relative ;; insert relative links in org-insert-link
+   ;;org-odd-levels-only t
+   org-src-fontify-natively t
+   org-src-preserve-indentation t
+   org-src-window-setup 'current-window
+   org-startup-indented t
+   org-tags-column 50)
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
- (defun my/org/org-reformat-buffer ()
-    (interactive)
-    (when (y-or-n-p "Really format current buffer? ")
-      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
-        (erase-buffer)
-        (insert document)
-        (goto-char (point-min)))))
+(add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
+
+(defun my/org/org-reformat-buffer ()
+   (interactive)
+   (when (y-or-n-p "Really format current buffer? ")
+     (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+       (erase-buffer)
+       (insert document)
+       (goto-char (point-min)))))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -116,11 +133,13 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (shell . t)
 (ledger . t)
 (plantuml . t)
-(napkin . t)
+;(napkin . t)
+(lisp . t)
 (gnuplot . t)
 (haskell . t)
 (java . t)
 (dot . t)
+(restclient . t)
 (sql . t)))
 (setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 
@@ -465,6 +484,78 @@ a separator ' -> '."
     )
   )
 
+(use-package! ox-reveal)
+
+(defvar bigger-org-headlines-cookies nil)
+
+(make-variable-buffer-local 'bigger-org-headlines-cookies)
+
+(define-minor-mode bigger-org-headlines
+  "Make Org headlines bigger."
+  :lighter " Big-Org-Headlines"
+  (if bigger-org-headlines
+      (mapc (lambda (face)
+              (push (face-remap-add-relative face :height 2.5)
+                    bigger-org-headlines-cookies))
+            (cons 'org-link org-level-faces))
+    (mapc #'face-remap-remove-relative bigger-org-headlines-cookies)
+    (setq bigger-org-headlines-cookies nil))
+  (force-window-update (current-buffer)))
+
+
+;; Configure fill width
+(setq visual-fill-column-width 110
+      visual-fill-column-center-text t)
+
+(setq org-present-text-scale 3)
+
+(defun my/org-present-start ()
+  ;; Center the presentation and wrap lines
+  (setq visual-fill-column-width 110
+        visual-fill-column-center-text t)
+  (flyspell-mode 0)
+  (org-present-read-only)
+  (bigger-org-headlines 1)
+  (org-present-hide-cursor)
+  ;(org-present-big)
+  (hide-mode-line-mode 1)
+  (visual-fill-column-mode 1)
+  (visual-line-mode 1)
+  (tab-bar-mode 0)
+  (hl-line-mode 0)
+  ;(text-scale-increase org-present-text-scale)
+  )
+
+(defun my/org-present-end ()
+  ;; Stop centering the document
+  (visual-fill-column-mode 0)
+  (visual-line-mode 0)
+                                        ;(setq-local face-remapping-alist '((default variable-pitch default)))
+  (org-present-read-write)
+  (org-present-small)
+  (org-present-show-cursor)
+  (bigger-org-headlines 0)
+  (hide-mode-line-mode 0)
+  (tab-bar-mode 1)
+  (hl-line-mode 1)
+  )
+
+;; Register hooks with org-present
+(add-hook 'org-present-mode-hook 'my/org-present-start)
+(add-hook 'org-present-mode-quit-hook 'my/org-present-end)
+
+(defun my/org-present-prepare-slide (buffer-name heading)
+  ;; Show only top-level headlines
+  (org-overview)
+
+  ;; Unfold the current entry
+  (org-show-entry)
+
+  ;; Show only direct subheadings of the slide but don't expand them
+  (org-show-children))
+
+(add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide)
+
 (with-system windows-nt
   (setq-default ispell-program-name "C:/opt/hunspell/bin/hunspell.exe")
   (setq ispell-hunspell-dict-paths-alist
@@ -475,6 +566,8 @@ a separator ' -> '."
       '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
 
 (setq text-mode-hook '(lambda() (flyspell-mode t)))
+
+(global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
 
 (with-system windows-nt
   (require 'epa-file)
@@ -678,6 +771,8 @@ a separator ' -> '."
 (global-set-key (kbd "C-<f1>") 'm/toggleindex-public)
 (global-set-key (kbd "C-<f2>") 'm/toggleindex-private)
 
+(use-package! speed-type)
+
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
@@ -721,6 +816,8 @@ a separator ' -> '."
           ".cache"
           ".clangd")))
 
+(global-set-key (kbd "C-M-i") 'iedit-mode)
+
 (use-package! company
   :after lsp-mode
   :hook (lsp-mode . company-mode)
@@ -734,25 +831,36 @@ a separator ' -> '."
 (use-package! company-box
   :hook (company-mode . company-box-mode))
 
-(defun my/get-gist ()
+(defun my/get-gist (filepath)
   (interactive)
-  (find-file "~/emacstools/code-gists/my-code-gists.org")
+  (find-file filepath)
   (counsel-org-goto)
   (search-forward "#+begin_src")
   (org-edit-src-code)
   (clipboard-kill-region (point-min) (point-max))
   (org-edit-src-abort)
-  (kill-buffer)
+  ;(kill-buffer)
+  (previous-buffer)
   (yank))
 
- (use-package! highlight-symbol
-        :defer 10
-        :bind (("M-n" . highlight-symbol-next)
-               ("M-p" . highlight-symbol-prev))
-        :init
-        (setq highlight-symbol-idle-delay 0.3)
-        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
-        (highlight-symbol-nav-mode))
+(defun my/get-gist-all()
+  (interactive)
+  (my/get-gist "~/emacstools/code-gists/code-gists-all.org")
+  )
+
+(defun my/get-gist-python()
+  (interactive)
+  (my/get-gist "~/emacstools/code-gists/code-gists.python.org")
+  )
+
+(use-package! highlight-symbol
+       :defer 10
+       :bind (("M-n" . highlight-symbol-next)
+              ("M-p" . highlight-symbol-prev))
+       :init
+       (setq highlight-symbol-idle-delay 0.3)
+       (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+       (highlight-symbol-nav-mode))
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -893,10 +1001,10 @@ a separator ' -> '."
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
 (use-package! sly
-  :defer t
   :init
   (with-system windows-nt
-    (setq inferior-lisp-program "C:\\opt\\lisp\\sbcl\\sbcl.exe"))
+   (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
+    (setq inferior-lisp-program "sbcl"))
   (add-hook 'lisp-mode-hook 'sly-mode))
 
 (use-package! highlight-sexp
@@ -1192,18 +1300,21 @@ a separator ' -> '."
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
+(defun my/open/work-rum-tasks ()
+  (interactive)
+  (split-window-right)
+  (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/rum-tasks.org"))
+
+
 (defun my/open/org-second-brain ()
   (interactive)
   (split-window-right)
   (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
 
-
-
-
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
-      "1" #'my/open/work-rum-standup-org
+      "1" #'my/open/work-rum-tasks
       "2" #'my/open/org-second-brain
       )
 
