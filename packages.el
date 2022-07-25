@@ -103,8 +103,16 @@
 (package! symex)
 (package! all-the-icons :disable t)
 (package! speed-type)
+;(package! multiple-cursors)
+(package! evil-mc)
+
 
 (package! rustic)
 ;;(package! slime)
 (package! restclient)
 (package! ob-restclient)
+(package! ob-powershell)
+(package! haskell-mode)
+(package! devdocs)
+(package! tao-theme)
+(package! almost-mono-themes)

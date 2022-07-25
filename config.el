@@ -40,14 +40,19 @@
   ;; available. You can either set `doom-theme' or manually load a theme with the
   ;; `load-theme' function. This is the default:
   ;;(setq doom-theme 'doom-one-light)
-  (setq doom-theme 'doom-opera-light)
+  ;;(setq doom-theme 'doom-opera-light)
+
+(setq hl-sexp-foreground-color nil
+      hl-sexp-background-color "gray20") ;;light yellow
+(setq tao-theme-use-height nil
+      tao-theme-use-sepia nil
+      tao-theme-use-boxes nil)
+(setq doom-theme 'tao-yin)
+
 
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
-
-(setq hl-sexp-foreground-color nil
-      hl-sexp-background-color "#FEF9E7") ;;light yellow
 
 (setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
@@ -63,9 +68,8 @@
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
 (setq display-line-numbers-type nil)
-(tab-bar-mode)
 
- (global-superword-mode 1)
+(global-superword-mode 1)
 
 ;;(show-paren-mode 1)
 ;;(setq show-paren-style 'expression)
@@ -140,6 +144,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (java . t)
 (dot . t)
 (restclient . t)
+(powershell . t)
 (sql . t)))
 (setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 
@@ -567,6 +572,82 @@ a separator ' -> '."
 
 (setq text-mode-hook '(lambda() (flyspell-mode t)))
 
+(defun modi/org-in-any-block-p ()
+  "Return non-nil if the point is in any Org block.
+The Org block can be *any*: src, example, verse, etc., even any
+Org Special block.
+This function is heavily adapted from `org-between-regexps-p'."
+  (save-match-data
+    (let ((pos (point))
+          (case-fold-search t)
+          (block-begin-re "^[[:blank:]]*#\\+begin_\\(?1:.+?\\)\\(?: .*\\)*$")
+          (limit-up (save-excursion (outline-previous-heading)))
+          (limit-down (save-excursion (outline-next-heading)))
+          beg end)
+      (save-excursion
+        ;; Point is on a block when on BLOCK-BEGIN-RE or if
+        ;; BLOCK-BEGIN-RE can be found before it...
+        (and (or (org-in-regexp block-begin-re)
+                 (re-search-backward block-begin-re limit-up :noerror))
+             (setq beg (match-beginning 0))
+             ;; ... and BLOCK-END-RE after it...
+             (let ((block-end-re (concat "^[[:blank:]]*#\\+end_"
+                                         (match-string-no-properties 1)
+                                         "\\( .*\\)*$")))
+               (goto-char (match-end 0))
+               (re-search-forward block-end-re limit-down :noerror))
+             (> (setq end (match-end 0)) pos)
+             ;; ... without another BLOCK-BEGIN-RE in-between.
+             (goto-char (match-beginning 0))
+             (not (re-search-backward block-begin-re (1+ beg) :noerror))
+             ;; Return value.
+             (cons beg end))))))
+
+(defun modi/org-split-block ()
+  "Sensibly split the current Org block at point. "
+  (interactive)
+  (if (modi/org-in-any-block-p)
+      (save-match-data
+        (save-restriction
+          (widen)
+          (let ((case-fold-search t)
+                (at-bol (bolp))
+                block-start
+                block-end)
+            (save-excursion
+              (re-search-backward "^\\(?1:[[:blank:]]*#\\+begin_.+?\\)\\(?: .*\\)*$" nil nil 1)
+              (setq block-start (match-string-no-properties 0))
+              (setq block-end (replace-regexp-in-string
+                               "begin_" "end_" ;Replaces "begin_" with "end_", "BEGIN_" with "END_"
+                               (match-string-no-properties 1))))
+            ;; Go to the end of current line, if not at the BOL
+            (unless at-bol
+              (end-of-line 1))
+            (insert (concat (if at-bol "" "\n")
+                            block-end
+                            "\n\n"
+                            block-start
+                            (if at-bol "\n" "")))
+            ;; Go to the line before the inserted "#+begin_ .." line
+            (beginning-of-line (if at-bol -1 0)))))
+    (message "Point is not in an Org block")))
+
+(defun modi/org-meta-return (&optional arg)
+  "Insert a new heading or wrap a region in a table.
+Calls `org-insert-heading', `org-insert-item',
+`org-table-wrap-region', or `modi/org-split-block' depending on
+context.  When called with an argument, unconditionally call
+`org-insert-heading'."
+  (interactive "P")
+  (org-check-before-invisible-edit 'insert)
+  (or (run-hook-with-args-until-success 'org-metareturn-hook)
+      (call-interactively (cond (arg #'org-insert-heading)
+                                ((org-at-table-p) #'org-table-wrap-region)
+                                ((org-in-item-p) #'org-insert-item)
+                                ((modi/org-in-any-block-p) #'modi/org-split-block)
+                                (t #'org-insert-heading)))))
+(advice-add 'org-meta-return :override #'modi/org-meta-return)
+
 (global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
 
 (with-system windows-nt
@@ -771,7 +852,13 @@ a separator ' -> '."
 (global-set-key (kbd "C-<f1>") 'm/toggleindex-public)
 (global-set-key (kbd "C-<f2>") 'm/toggleindex-private)
 
-(use-package! speed-type)
+;(use-package! speed-type)
+
+(use-package! evil-mc)
+
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (define-key eshell-mode-map (kbd "C-c d") #'eshell-z)))
 
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
@@ -825,9 +912,11 @@ a separator ' -> '."
          ("<tab>" . company-complete-selection))
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
-  :custom
+  :config
   (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+  (company-idle-delay 0.0)
+  (global-company-mode 0))
+
 (use-package! company-box
   :hook (company-mode . company-box-mode))
 
@@ -903,6 +992,12 @@ a separator ' -> '."
 
 (when (executable-find "ipython")
   (setq python-shell-interpreter "ipython"))
+
+(add-hook 'python-mode-hook
+          (lambda ()
+            (setq indent-tabs-mode nil)
+            (setq tab-width 4)
+            (setq evil-shift-width 4)))
 
 (with-system windows-nt
   (setq JAVA_BASE "c:/opt/jdks"))
@@ -995,6 +1090,8 @@ a separator ' -> '."
 (after! lsp-mode
   (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
 
+(add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
+
 (use-package! aggressive-indent
   :defer t
   :config
@@ -1044,6 +1141,12 @@ a separator ' -> '."
   ;; no longer be necessary.
   (when buffer-file-name
     (setq-local buffer-save-without-query t)))
+
+(use-package! devdocs
+  :config
+  (add-hook 'python-mode-hook
+          (lambda () (setq-local devdocs-current-docs '("python~3.10"))))
+  )
 
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
