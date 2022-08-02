@@ -4,9 +4,9 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jul 24, 2022 Sun"
+Last Saved: "Aug 02, 2022 Tue"
 
-*** Table of contents :TOC_7:
+*** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
   - [[#useful-macros][Useful Macros]]
   - [[#default-config][Default Config]]
@@ -16,6 +16,7 @@ Last Saved: "Jul 24, 2022 Sun"
     - [[#time-stamp-and-basic-org-defaults][Time Stamp and basic org defaults]]
     - [[#org-formatter][org formatter]]
     - [[#org-babel][Org babel]]
+      - [[#literate-programming-on-save-hooks][literate programming on save hooks]]
     - [[#org-captures][org captures]]
     - [[#org-agenda][org-agenda]]
       - [[#org-agenda-keywords][org-agenda keywords]]
@@ -146,7 +147,7 @@ Get all fonts present
 
 (setq hl-sexp-foreground-color nil
       hl-sexp-background-color "gray20") ;;light yellow
-(setq tao-theme-use-height nil
+(setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
 (setq doom-theme 'tao-yin)
@@ -155,7 +156,6 @@ Get all fonts present
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
-
 #+end_src
 
 *** Others
@@ -169,7 +169,8 @@ Get all fonts present
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/orgagenda")
+;(setq org-directory "~/org/orgagenda")
+(setq org-directory "c:/my/org-roam")
 ;(setq org-agenda-root-dir "~/org/orgagenda")
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -234,7 +235,6 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file-other-window))
 
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
-
 #+end_src
 *** org formatter
 #+begin_src emacs-lisp
@@ -262,6 +262,7 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 '((python . t)
 (ipython . t)
 (shell . t)
+(eshell . t)
 (ledger . t)
 (plantuml . t)
 ;(napkin . t)
@@ -279,10 +280,59 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
 #+end_src
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! org-auto-tangle
   :defer t
   :hook (org-mode . org-auto-tangle-mode))
+#+end_src
+
+**** literate programming on save hooks
+
+proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py on save!
+
+#+BEGIN_SRC emacs-lisp
+(defun my/org-babel-tangle-literate-file ()
+  (interactive)
+  (setq tangle_src (buffer-file-name))
+  (when (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
+            (match-string 1 tangle_src))
+    (let ((my/org-babel-tangle-literate-file nil))
+      (message "starting tangle")
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'after-save-hook #'my/org-babel-tangle-literate-file)))
+
+(defun my/org-babel-post-tangle-move-output-file()
+  (interactive)
+  ;; "c:/my/test.litorg/abc/proj.litorg/package/module/filename.py.python"
+  (setq tangle_src (buffer-file-name))
+
+  ;; "c:/my/test.litorg/abc/proj.litorg"
+  (setq lit_path_root
+        (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
+            (match-string 1 tangle_src)))
+  (when lit_path_root
+    ;; "c:/my/test.litorg/abc/proj"
+    (setq tangle_path_head
+          (if (string-match "\\(.*\\)\\.litorg" lit_path_root)
+              (match-string 1 lit_path_root)))
+
+    ;; "package/module/filename.py"
+    (setq tangle_path_tail (file-name-sans-extension
+                            (file-relative-name tangle_src lit_path_root)))
+    ;; "c:/my/test.litorg/abc/proj/package/module/filename.py"
+    (setq tangle_abs_path
+          (file-name-concat tangle_path_head tangle_path_tail))
+    (message "tangle_src = %s" tangle_src)
+    (rename-file tangle_src tangle_abs_path t)
+    (message "Successfully tangled: %s" tangle_abs_path)))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'org-babel-post-tangle-hook #'my/org-babel-post-tangle-move-output-file)))
+
 #+END_SRC
 
 *** org captures
@@ -588,11 +638,11 @@ a separator ' -> '."
 #+end_src
 
 *** org-sidebar
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! org-sidebar
   :defer         t
                 )
-#+END_SRC
+#+end_src
 
 *** Screenshot - Windows
 
@@ -680,7 +730,28 @@ a separator ' -> '."
 #+end_src
 
 *** org-roam and org-roam-ui
+
+#+BEGIN_SRC emacs-lisp :tangle no
 (setq org-roam-directory "c:/my/org-roam")
+
+(use-package! org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "c:/my/org-roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  ;; If you're using a vertical completion framework, you might want a more informative completion interface
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (org-roam-db-autosync-mode)
+  ;; If using org-roam-protocol
+  (require 'org-roam-protocol))
+
 
 (use-package! websocket
   :defer         t
@@ -698,6 +769,10 @@ a separator ' -> '."
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
+#+END_SRC
+
+#+RESULTS:
+
 *** org-transclusion
 
 #+begin_example
@@ -728,7 +803,7 @@ https://systemcrafters.net/emacs-tips/presentations-with-org-present/
                                    (org-verbatim (:height 1.55) org-verbatim)
                                    (org-block (:height 1.25) org-block)
                                    (org-block-begin-line (:height 0.7) org-block)))
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defvar bigger-org-headlines-cookies nil)
 
 (make-variable-buffer-local 'bigger-org-headlines-cookies)
@@ -798,10 +873,9 @@ https://systemcrafters.net/emacs-tips/presentations-with-org-present/
   (org-show-children))
 
 (add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide)
+#+end_src
 
-#+END_SRC
-
-#+RESULTS:
+#+results:
 | my/org-present-prepare-slide |
 
 *** spell check
@@ -822,7 +896,7 @@ get hunspell and other ports from : https://sourceforge.net/projects/ezwinports/
 #+end_src
 
 *** split org-src-block
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (defun modi/org-in-any-block-p ()
   "Return non-nil if the point is in any Org block.
 The Org block can be *any*: src, example, verse, etc., even any
@@ -898,18 +972,19 @@ context.  When called with an argument, unconditionally call
                                 ((modi/org-in-any-block-p) #'modi/org-split-block)
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
-#+END_SRC
+#+end_src
 
-#+RESULTS:
+#+results:
+#+END_SRC
 
 ** Functionality
 *** scratch
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
-#+END_SRC
+#+end_src
 *** GnuPG-gpg
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (with-system windows-nt
   (require 'epa-file)
   (epa-file-enable)
@@ -937,10 +1012,10 @@ context.  When called with an argument, unconditionally call
     (ad-disable-advice 'epg--start 'around 'advice-epg-disable-agent)
     (ad-activate 'epg--start)
     (message "EasyPG gpg-agent re-enabled")))
-#+END_SRC
+#+end_src
 *** popper
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! popper
   :bind (("C-\\"   . popper-toggle-latest)
          ("M-\\"   . popper-cycle)
@@ -955,10 +1030,10 @@ context.  When called with an argument, unconditionally call
           compilation-mode))
   (popper-mode +1)
   (popper-echo-mode +1))
-#+END_SRC
+#+end_src
 
 *** pulsar
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! pulsar
   :config
   (setq pulsar-pulse-functions
@@ -1025,7 +1100,7 @@ context.  When called with an argument, unconditionally call
     (define-key map (kbd "C-c h p") #'pulsar-pulse-line)
     (define-key map (kbd "C-c h h") #'pulsar-highlight-line))
   )
-#+END_SRC
+#+end_src
 *** Super-save
 #+begin_src emacs-lisp
 (use-package! super-save
@@ -1041,25 +1116,26 @@ context.  When called with an argument, unconditionally call
 *** dired
 
 #+begin_src emacs-lisp
-(setq dired-recursive-copies (quote always)) ;no asking
-(setq dired-recursive-deletes (quote top)) ; ask once
 (setq dired-dwim-target t)
-(setq ls-lisp-dirs-first t)
-(setq dired-recursive-deletes 'top)
 (setq dired-listing-switches "-hal")
+(setq dired-recursive-copies (quote always)) ;no asking
+(setq dired-recursive-deletes 'top) ; ask once
 (setq diredp-hide-details-initially-flag nil)
+(setq ls-lisp-dirs-first t)
 
 (with-eval-after-load 'dired
   (defun xah-dired-mode-setup ()
     "to be run as hook for `dired-mode'."
     (dired-hide-details-mode 1))
   (add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+
+  (define-key dired-mode-map (kbd "<mouse-2>") 'dired-find-alternate-file)
+  (define-key dired-mode-map (kbd "^") (lambda () (interactive) (find-alternate-file "..")))  ; was dired-up-directory
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
-
-
 #+end_src
 
 #+results:
+: dired-find-alternate-file
 *** dired-sidebar
 
 #+begin_src emacs-lisp
@@ -1140,9 +1216,9 @@ context.  When called with an argument, unconditionally call
 : m/toggleindex-private
 
 *** speed-type
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;(use-package! speed-type)
-#+END_SRC
+#+end_src
 
 *** multiple-cursors
 
@@ -1155,9 +1231,9 @@ context.  When called with an argument, unconditionally call
          ("C-c C-SPC" . mc/edit-lines)
          ))
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! evil-mc)
-#+END_SRC
+#+end_src
 
 *** eshell
 
@@ -1181,12 +1257,11 @@ any directory proferred by `consult-dir'."
      (t (eshell/cd (if regexp (eshell-find-previous-directory regexp)
                      (completing-read "cd: " eshell-dirs)))))))
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (add-hook 'eshell-mode-hook
           (lambda ()
             (define-key eshell-mode-map (kbd "C-c d") #'eshell-z)))
-
-#+END_SRC
+#+end_src
 
 ** UI Stuff
 #+begin_src emacs-lisp
@@ -1227,18 +1302,18 @@ any directory proferred by `consult-dir'."
               ("C-c p" . projectile-command-map)))
 
 
-  (projectile-register-project-type 'gradle '("build.gradle")
-                                    :project-file "build.gradle"
-                                    :compile "./gradlew build"
-                                    :test "./gradlew test"
-                                    :run "./gradlew bootRun"
-                                    :test-suffix "Tests")
+(projectile-register-project-type 'gradle '("build.gradle")
+                                  :project-file "build.gradle"
+                                  :compile "./gradlew build"
+                                  :test "./gradlew test"
+                                  :run "./gradlew bootRun"
+                                  :test-suffix "Tests")
 
-  (projectile-register-project-type 'npm '("package.json")
-                                    :project-file "package.json"
-                                    :src-dir "src/"
-                                    :test-dir "__tests__/"
-                                    :test-suffix ".spec")
+(projectile-register-project-type 'npm '("package.json")
+                                  :project-file "package.json"
+                                  :src-dir "src/"
+                                  :test-dir "__tests__/"
+                                  :test-suffix ".spec")
 
 #+begin_src emacs-lisp
 (with-eval-after-load 'projectile
@@ -1288,11 +1363,11 @@ any directory proferred by `consult-dir'."
 
 ** coding / Programming
 *** iedit
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key (kbd "C-M-i") 'iedit-mode)
-#+END_SRC
+#+end_src
 *** company
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! company
   :after lsp-mode
   :hook (lsp-mode . company-mode)
@@ -1301,14 +1376,14 @@ any directory proferred by `consult-dir'."
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :config
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0)
-  (global-company-mode 0))
+  (setq company-minimum-prefix-length 1)
+  (setq company-idle-delay 0.0)
+  (global-company-mode nil)
+  )
 
 (use-package! company-box
   :hook (company-mode . company-box-mode))
-
-#+END_SRC
+#+end_src
 *** gist managment
 #+begin_src emacs-lisp
 (defun my/get-gist (filepath)
@@ -1495,7 +1570,6 @@ https://github.com/syl20bnr/spacemacs/issues/10160
         (powershell-prog "c:\\windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"))
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
-
 #+end_src
 
 (defun nushell (&optional buffer)
@@ -1511,7 +1585,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
 (use-package vterm)
 *** lsp-java
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
 (use-package! lsp-java
   :init
@@ -1528,11 +1602,11 @@ https://github.com/syl20bnr/spacemacs/issues/10160
                                              )])))
 (after! lsp-mode
   (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
-#+END_SRC
+#+end_src
 *** haskell
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
-#+END_SRC
+#+end_src
 *** lisp programming
 
 ;;I don't like rainbow-delimiters
@@ -1568,14 +1642,14 @@ https://github.com/syl20bnr/spacemacs/issues/10160
   :config
   (symex-initialize)
   (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
-#+END_SRC
+#+end_src
 
-#+RESULTS:
+#+results:
 : sly
 
 *** rust programming - rustic
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! rustic
   :bind (:map rustic-mode-map
               ("M-j" . lsp-ui-imenu)
@@ -1603,19 +1677,19 @@ https://github.com/syl20bnr/spacemacs/issues/10160
   ;; no longer be necessary.
   (when buffer-file-name
     (setq-local buffer-save-without-query t)))
-#+END_SRC
+#+end_src
 
-#+RESULTS:
+#+results:
 : rk/rustic-mode-hook
 
 *** devdocs
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package! devdocs
   :config
   (add-hook 'python-mode-hook
           (lambda () (setq-local devdocs-current-docs '("python~3.10"))))
   )
-#+END_SRC
+#+end_src
 
 ** Voidtools
 #+begin_src emacs-lisp
@@ -1865,7 +1939,7 @@ https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
 #+end_src
 
 *** String Utilities
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
 (defun my/string-utils/convert-backward-slash-to-forward-slash ()
   (interactive)
@@ -1875,9 +1949,7 @@ https://readingworldmagazine.com/emacs/2020-02-20-emacs-enter-exit-appearance/
       (goto-char (point-min))
       (while (search-forward "\\" nil t)
         (replace-match "/" nil t)))))
-
-
-#+END_SRC
+#+end_src
 
 
 ** Work
@@ -1963,10 +2035,10 @@ TODO: Should copy general package configs to simplify keybindings.
 
 ** Final Touches
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (with-system windows-nt
   (cd "c:/my/tmp"))
-#+END_SRC
+#+end_src
 
 * Config Ideas
 

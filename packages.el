@@ -66,8 +66,8 @@
                        :files ("*.el")
                        ))
 
-;;(unpin! org-roam)
-;;(package! org-roam-ui)
+(unpin! org-roam)
+(package! org-roam-ui)
 (package! org-auto-tangle)
 (package! ob-ipython)
 ;;(package! vterm)
@@ -116,3 +116,7 @@
 (package! devdocs)
 (package! tao-theme)
 (package! almost-mono-themes)
+
+
+(package! emacsql)
+(package! emacsql-sqlite)

@@ -44,7 +44,7 @@
 
 (setq hl-sexp-foreground-color nil
       hl-sexp-background-color "gray20") ;;light yellow
-(setq tao-theme-use-height nil
+(setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
 (setq doom-theme 'tao-yin)
@@ -62,7 +62,8 @@
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/orgagenda")
+;(setq org-directory "~/org/orgagenda")
+(setq org-directory "c:/my/org-roam")
 ;(setq org-agenda-root-dir "~/org/orgagenda")
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -135,6 +136,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 '((python . t)
 (ipython . t)
 (shell . t)
+(eshell . t)
 (ledger . t)
 (plantuml . t)
 ;(napkin . t)
@@ -154,6 +156,48 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (use-package! org-auto-tangle
   :defer t
   :hook (org-mode . org-auto-tangle-mode))
+
+(defun my/org-babel-tangle-literate-file ()
+  (interactive)
+  (setq tangle_src (buffer-file-name))
+  (when (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
+            (match-string 1 tangle_src))
+    (let ((my/org-babel-tangle-literate-file nil))
+      (message "starting tangle")
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'after-save-hook #'my/org-babel-tangle-literate-file)))
+
+(defun my/org-babel-post-tangle-move-output-file()
+  (interactive)
+  ;; "c:/my/test.litorg/abc/proj.litorg/package/module/filename.py.python"
+  (setq tangle_src (buffer-file-name))
+
+  ;; "c:/my/test.litorg/abc/proj.litorg"
+  (setq lit_path_root
+        (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
+            (match-string 1 tangle_src)))
+  (when lit_path_root
+    ;; "c:/my/test.litorg/abc/proj"
+    (setq tangle_path_head
+          (if (string-match "\\(.*\\)\\.litorg" lit_path_root)
+              (match-string 1 lit_path_root)))
+
+    ;; "package/module/filename.py"
+    (setq tangle_path_tail (file-name-sans-extension
+                            (file-relative-name tangle_src lit_path_root)))
+    ;; "c:/my/test.litorg/abc/proj/package/module/filename.py"
+    (setq tangle_abs_path
+          (file-name-concat tangle_path_head tangle_path_tail))
+    (message "tangle_src = %s" tangle_src)
+    (rename-file tangle_src tangle_abs_path t)
+    (message "Successfully tangled: %s" tangle_abs_path)))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (add-hook 'org-babel-post-tangle-hook #'my/org-babel-post-tangle-move-output-file)))
 
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
 ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
@@ -769,19 +813,21 @@ context.  When called with an argument, unconditionally call
   (add-to-list 'super-save-hook-triggers 'find-file-hook)
   (super-save-mode +1))
 
-(setq dired-recursive-copies (quote always)) ;no asking
-(setq dired-recursive-deletes (quote top)) ; ask once
 (setq dired-dwim-target t)
-(setq ls-lisp-dirs-first t)
-(setq dired-recursive-deletes 'top)
 (setq dired-listing-switches "-hal")
+(setq dired-recursive-copies (quote always)) ;no asking
+(setq dired-recursive-deletes 'top) ; ask once
 (setq diredp-hide-details-initially-flag nil)
+(setq ls-lisp-dirs-first t)
 
 (with-eval-after-load 'dired
   (defun xah-dired-mode-setup ()
     "to be run as hook for `dired-mode'."
     (dired-hide-details-mode 1))
   (add-hook 'dired-mode-hook 'xah-dired-mode-setup)
+
+  (define-key dired-mode-map (kbd "<mouse-2>") 'dired-find-alternate-file)
+  (define-key dired-mode-map (kbd "^") (lambda () (interactive) (find-alternate-file "..")))  ; was dired-up-directory
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
 
 (use-package! dired-sidebar
@@ -913,9 +959,10 @@ context.  When called with an argument, unconditionally call
         (:map lsp-mode-map
          ("<tab>" . company-indent-or-complete-common))
   :config
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0)
-  (global-company-mode 0))
+  (setq company-minimum-prefix-length 1)
+  (setq company-idle-delay 0.0)
+  (global-company-mode nil)
+  )
 
 (use-package! company-box
   :hook (company-mode . company-box-mode))
