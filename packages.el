@@ -97,6 +97,7 @@
 (package! highlight-symbol)
 
 ;(package! sly)
+(package! sly-quicklisp)
 (package! highlight-sexp)
 (package! paren-face)
 (package! aggressive-indent)
@@ -120,3 +121,4 @@
 
 (package! emacsql)
 (package! emacsql-sqlite)
+(package! hyperbole)

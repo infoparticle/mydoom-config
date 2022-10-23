@@ -17,7 +17,7 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
   ;; are the three important ones:
   ;;
   ;; + `doom-font'
@@ -62,9 +62,9 @@
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-;(setq org-directory "~/org/orgagenda")
-(setq org-directory "c:/my/org-roam")
-;(setq org-agenda-root-dir "~/org/orgagenda")
+(setq org-directory "~/org/orgagenda")
+;;(setq org-directory "c:/my/org-roam")
+(setq org-agenda-root-dir "~/org/orgagenda")
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -92,6 +92,24 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 ;;(setq org-superstar-headline-bullets-list '("◉" "◎" "⚫" "○" "►" "◇"))
+
+;; from https://www.emacswiki.org/emacs/CalendarWeekNumbers
+(copy-face font-lock-constant-face 'calendar-iso-week-face)
+(setq calendar-intermonth-text
+      '(propertize
+        (format "%2d"
+                (car
+                 (calendar-iso-from-absolute
+                  (calendar-absolute-from-gregorian (list month day year)))))
+        'font-lock-face 'calendar-iso-week-face))
+
+(copy-face 'default 'calendar-iso-week-header-face)
+(setq calendar-intermonth-header
+      (propertize "Wk"                  ; or e.g. "KW" in Germany
+                  'font-lock-face 'calendar-iso-week-header-face))
+
+(set-face-attribute 'calendar-iso-week-face nil
+                    :height 1.0 :foreground "salmon")
 
 (setq
 time-stamp-active t          ; do enable time-stamps
@@ -123,13 +141,13 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
 
-(defun my/org/org-reformat-buffer ()
-   (interactive)
-   (when (y-or-n-p "Really format current buffer? ")
-     (let ((document (org-element-interpret-data (org-element-parse-buffer))))
-       (erase-buffer)
-       (insert document)
-       (goto-char (point-min)))))
+ (defun my/org/org-reformat-buffer ()
+    (interactive)
+    (when (y-or-n-p "Really format current buffer? ")
+      (let ((document (org-element-interpret-data (org-element-parse-buffer))))
+        (erase-buffer)
+        (insert document)
+        (goto-char (point-min)))))
 
 (org-babel-do-load-languages
 'org-babel-load-languages
@@ -531,6 +549,33 @@ a separator ' -> '."
     (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
     (org-display-inline-images)
     )
+  )
+
+(after! org-roam
+  (setq org-roam-directory (file-truename "c:/my/org-roam"))
+
+  (setq org-roam-root "c:/my/org-roam/root/")
+
+  (defun my/get-roam-dir-name-action-list-candidates (str pred _)
+    (setq roam-dir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                       (directory-files org-roam-root))))
+
+  (defun my/set-roam-dir-name-action (x)
+    (setq org-roam-directory  (concat org-roam-root x))
+    (org-roam-db-sync)
+    )
+
+  (defun my/set-org-roam-directory ()
+    "pick a wiki from dropbox folder."
+    (interactive)
+    (ivy-read "List of wikis: "  #'my/get-roam-dir-name-action-list-candidates
+              :preselect (ivy-thing-at-point)
+              :require-match t
+              :action #'my/set-roam-dir-name-action
+              :caller 'my/get-roam-dir-name))
+  (map! :leader
+        :desc "set org-roam directory"
+        "n r ." #'my/set-org-roam-directory)
   )
 
 (use-package! ox-reveal)
@@ -989,14 +1034,14 @@ context.  When called with an argument, unconditionally call
   (my/get-gist "~/emacstools/code-gists/code-gists.python.org")
   )
 
-(use-package! highlight-symbol
-       :defer 10
-       :bind (("M-n" . highlight-symbol-next)
-              ("M-p" . highlight-symbol-prev))
-       :init
-       (setq highlight-symbol-idle-delay 0.3)
-       (add-hook 'prog-mode-hook 'highlight-symbol-mode)
-       (highlight-symbol-nav-mode))
+ (use-package! highlight-symbol
+        :defer 10
+        :bind (("M-n" . highlight-symbol-next)
+               ("M-p" . highlight-symbol-prev))
+        :init
+        (setq highlight-symbol-idle-delay 0.3)
+        (add-hook 'prog-mode-hook 'highlight-symbol-mode)
+        (highlight-symbol-nav-mode))
 
 (setq infodir-root "~/emacstools/my-info-references/info-files/")
 
@@ -1149,8 +1194,10 @@ context.  When called with an argument, unconditionally call
   (with-system windows-nt
    (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
     (setq inferior-lisp-program "sbcl"))
-  (add-hook 'lisp-mode-hook 'sly-mode))
-
+  ;;(add-hook 'lisp-mode-hook 'sly-mode) ;;invoke sly on demand
+  )
+(use-package! sly-quicklisp
+  )
 (use-package! highlight-sexp
   :config
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
@@ -1296,6 +1343,21 @@ context.  When called with an argument, unconditionally call
   (my/zk-insert-link-into-selection selected-file (region-beginning) (region-end))
   (my/zk-add-see-also selected-file)
   (my/zk-add-backlink selected-file current-file))
+
+(defun rename-file-and-buffer (new-name)
+  "Renames both current buffer and file it's visiting to NEW-NAME."
+  (interactive "sNew name: ")
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+      (if (get-buffer new-name)
+          (message "A buffer named '%s' already exists!" new-name)
+        (progn
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil))))))
 
 (defun my/replace-garbage-chars ()
 "Replace non-rendering MS and other garbage characters with latin1 equivalents."

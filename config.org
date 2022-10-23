@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Aug 02, 2022 Tue"
+Last Saved: "Oct 11, 2022 Tue"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -12,6 +12,7 @@ Last Saved: "Aug 02, 2022 Tue"
   - [[#default-config][Default Config]]
     - [[#fonts-and-themes][Fonts and Themes]]
     - [[#others][Others]]
+      - [[#calendar-add-weeks][Calendar add weeks]]
   - [[#org-mode][Org mode]]
     - [[#time-stamp-and-basic-org-defaults][Time Stamp and basic org defaults]]
     - [[#org-formatter][org formatter]]
@@ -71,6 +72,7 @@ Last Saved: "Aug 02, 2022 Tue"
     - [[#wiki][Wiki]]
     - [[#create-trading-journal-entry][Create Trading Journal Entry]]
     - [[#zettlekasten][Zettlekasten]]
+  - [[#file-operations][file operations]]
   - [[#text-transformations][Text Transformations]]
     - [[#removing-garbage-chars][Removing garbage chars]]
   - [[#utility-functions][Utility Functions]]
@@ -169,9 +171,9 @@ Get all fonts present
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-;(setq org-directory "~/org/orgagenda")
-(setq org-directory "c:/my/org-roam")
-;(setq org-agenda-root-dir "~/org/orgagenda")
+(setq org-directory "~/org/orgagenda")
+;;(setq org-directory "c:/my/org-roam")
+(setq org-agenda-root-dir "~/org/orgagenda")
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -200,6 +202,30 @@ Get all fonts present
 ;; they are implemented.
 ;;(setq org-superstar-headline-bullets-list '("◉" "◎" "⚫" "○" "►" "◇"))
 #+end_src
+
+**** Calendar add weeks
+#+BEGIN_SRC emacs-lisp
+;; from https://www.emacswiki.org/emacs/CalendarWeekNumbers
+(copy-face font-lock-constant-face 'calendar-iso-week-face)
+(setq calendar-intermonth-text
+      '(propertize
+        (format "%2d"
+                (car
+                 (calendar-iso-from-absolute
+                  (calendar-absolute-from-gregorian (list month day year)))))
+        'font-lock-face 'calendar-iso-week-face))
+
+(copy-face 'default 'calendar-iso-week-header-face)
+(setq calendar-intermonth-header
+      (propertize "Wk"                  ; or e.g. "KW" in Germany
+                  'font-lock-face 'calendar-iso-week-header-face))
+
+(set-face-attribute 'calendar-iso-week-face nil
+                    :height 1.0 :foreground "salmon")
+
+#+END_SRC
+
+#+RESULTS:
 
 ** Org mode
 
@@ -730,10 +756,36 @@ a separator ' -> '."
 #+end_src
 
 *** org-roam and org-roam-ui
+#+BEGIN_SRC emacs-lisp
+(after! org-roam
+  (setq org-roam-directory (file-truename "c:/my/org-roam"))
+
+  (setq org-roam-root "c:/my/org-roam/root/")
+
+  (defun my/get-roam-dir-name-action-list-candidates (str pred _)
+    (setq roam-dir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                       (directory-files org-roam-root))))
+
+  (defun my/set-roam-dir-name-action (x)
+    (setq org-roam-directory  (concat org-roam-root x))
+    (org-roam-db-sync)
+    )
+
+  (defun my/set-org-roam-directory ()
+    "pick a wiki from dropbox folder."
+    (interactive)
+    (ivy-read "List of wikis: "  #'my/get-roam-dir-name-action-list-candidates
+              :preselect (ivy-thing-at-point)
+              :require-match t
+              :action #'my/set-roam-dir-name-action
+              :caller 'my/get-roam-dir-name))
+  (map! :leader
+        :desc "set org-roam directory"
+        "n r ." #'my/set-org-roam-directory)
+  )
+#+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle no
-(setq org-roam-directory "c:/my/org-roam")
-
 (use-package! org-roam
   :ensure t
   :custom
@@ -1631,8 +1683,10 @@ https://github.com/syl20bnr/spacemacs/issues/10160
   (with-system windows-nt
    (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
     (setq inferior-lisp-program "sbcl"))
-  (add-hook 'lisp-mode-hook 'sly-mode))
-
+  ;;(add-hook 'lisp-mode-hook 'sly-mode) ;;invoke sly on demand
+  )
+(use-package! sly-quicklisp
+  )
 (use-package! highlight-sexp
   :config
   (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
@@ -1708,6 +1762,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
         "s f" #'counsel-locate))
 #+end_src
 ** workflow helpers
+
 *** Wiki
 #+begin_src emacs-lisp
 
@@ -1821,6 +1876,27 @@ TODO: also create link to the selected text
                            (projectile-project-files (projectile-project-root))))
       (my/zk-add-see-also selected-file)
       (my/zk-add-backlink selected-file current-file))))
+
+** file operations
+#+BEGIN_SRC emacs-lisp
+(defun rename-file-and-buffer (new-name)
+  "Renames both current buffer and file it's visiting to NEW-NAME."
+  (interactive "sNew name: ")
+  (let ((name (buffer-name))
+        (filename (buffer-file-name)))
+    (if (not filename)
+        (message "Buffer '%s' is not visiting a file!" name)
+      (if (get-buffer new-name)
+          (message "A buffer named '%s' already exists!" new-name)
+        (progn
+          (rename-file filename new-name 1)
+          (rename-buffer new-name)
+          (set-visited-file-name new-name)
+          (set-buffer-modified-p nil))))))
+#+END_SRC
+
+#+RESULTS:
+: rename-file-and-buffer
 
 
 ** Text Transformations
