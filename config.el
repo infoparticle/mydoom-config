@@ -28,8 +28,8 @@
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
   ;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
-  (setq myfont "Fira Code Medium"  myfontsize 17)
-  ;(setq myfont "Iosevka Medium"  myfontsize 20)
+  ;;(setq myfont "Fira Code Medium"  myfontsize 17)
+  (setq myfont "Iosevka"  myfontsize 20)
   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
          doom-variable-pitch-font (font-spec :family "sans" :size 13))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
@@ -47,7 +47,7 @@
 (setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
-(setq doom-theme 'tao-yin)
+(setq doom-theme 'doom-zenburn)
 
 
 ;;  (setq hl-sexp-foreground-color nil
@@ -172,57 +172,15 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
 
 (use-package! org-auto-tangle
-  :defer t
+  :defer 3
   :hook (org-mode . org-auto-tangle-mode))
-
-(defun my/org-babel-tangle-literate-file ()
-  (interactive)
-  (setq tangle_src (buffer-file-name))
-  (when (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
-            (match-string 1 tangle_src))
-    (let ((my/org-babel-tangle-literate-file nil))
-      (message "starting tangle")
-      (org-babel-tangle))))
-
-(add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'after-save-hook #'my/org-babel-tangle-literate-file)))
-
-(defun my/org-babel-post-tangle-move-output-file()
-  (interactive)
-  ;; "c:/my/test.litorg/abc/proj.litorg/package/module/filename.py.python"
-  (setq tangle_src (buffer-file-name))
-
-  ;; "c:/my/test.litorg/abc/proj.litorg"
-  (setq lit_path_root
-        (if (string-match "\\(.*\\.litorg\\).*" tangle_src)
-            (match-string 1 tangle_src)))
-  (when lit_path_root
-    ;; "c:/my/test.litorg/abc/proj"
-    (setq tangle_path_head
-          (if (string-match "\\(.*\\)\\.litorg" lit_path_root)
-              (match-string 1 lit_path_root)))
-
-    ;; "package/module/filename.py"
-    (setq tangle_path_tail (file-name-sans-extension
-                            (file-relative-name tangle_src lit_path_root)))
-    ;; "c:/my/test.litorg/abc/proj/package/module/filename.py"
-    (setq tangle_abs_path
-          (file-name-concat tangle_path_head tangle_path_tail))
-    (message "tangle_src = %s" tangle_src)
-    (rename-file tangle_src tangle_abs_path t)
-    (message "Successfully tangled: %s" tangle_abs_path)))
-
-(add-hook 'org-mode-hook
-          (lambda ()
-            (add-hook 'org-babel-post-tangle-hook #'my/org-babel-post-tangle-move-output-file)))
 
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
 ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
 ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
 (use-package! doct
-  :defer t
+  :defer 3
   :demand t
   :commands (doct)
   :init (setq org-capture-templates
@@ -274,6 +232,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                       ))))
 
 (global-set-key (kbd "C-c a") 'org-agenda-list)
+(global-set-key (kbd "M-,") 'execute-extended-command)
 
 (setq org-agenda-inhibit-startup t) ;; ~50x speedup
 (setq org-agenda-use-tag-inheritance nil) ;; 3-4x speedup
@@ -320,7 +279,7 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (setq org-crypt-key nil)
 
 (use-package! org-super-agenda
-  :defer t
+  :defer 3
   :commands org-super-agenda-mode)
 
 (after! org-agenda
@@ -398,14 +357,14 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                           (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
 
 (use-package! atomic-chrome
-  :defer t
+  :defer 3
  )
 
 (use-package! org-id
-  :defer t
+  :defer 3
   )
 (use-package! org-super-links
-  :defer t
+  :defer 3
     :bind (("C-c s s" . org-super-links-link)
          ("C-c s l" . org-super-links-store-link)
          ("C-c s C-l" . org-super-links-insert-link)
@@ -460,7 +419,7 @@ a separator ' -> '."
   )
 
 (use-package! org-appear
-  :defer         t
+  :defer 3
 
   :hook (org-mode . org-appear-mode)
   :config
@@ -472,7 +431,7 @@ a separator ' -> '."
   (run-at-time nil nil #'org-appear--set-elements))
 
 (use-package! org-sidebar
-  :defer         t
+  :defer 3
                 )
 
 (require 'url-util) ;needed for encoding spaces to %20
@@ -516,40 +475,6 @@ a separator ' -> '."
 
 
 (global-set-key [f5] 'my/org-screenshot)
-
-(setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
-(defun my/chartgallery/add-entry-to-index(it)
-  (save-excursion
-    (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
-    (end-of-buffer)
-    (org-insert-heading)
-    (insert (read-string "Enter comments for the screenshot :"
-                         (concat (format-time-string "%Y-%m-%d-%a-"))))
-    (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
-    (org-display-inline-images))
-  )
-
-
-(defun my/save-screenshot-to-chart-gallery()
-  (interactive)
-  (save-excursion
-    (setq screenshot-file-name
-          (concat (my/clean-spaces-from-path
-                   (read-string "Enter file name :"
-                                (concat (format-time-string "%Y-%m-%d-%a-"))))
-                  ".png"))
-    (setq chart-gallery-path
-          (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
-    (make-directory chart-gallery-path :parents)
-    (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
-
-    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
-    (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
-    (my/chartgallery/add-entry-to-index myvar/relative-filename)
-    (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
-    (org-display-inline-images)
-    )
-  )
 
 (after! org-roam
   (setq org-roam-directory (file-truename "c:/my/org-roam"))
@@ -737,6 +662,8 @@ context.  When called with an argument, unconditionally call
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
 
+(use-package! esup :ensure t)
+
 (global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
 
 (with-system windows-nt
@@ -876,7 +803,7 @@ context.  When called with an argument, unconditionally call
   (define-key dired-mode-map (kbd "RET") 'dired-find-alternate-file))
 
 (use-package! dired-sidebar
-  :defer t
+  :defer 3
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -947,10 +874,6 @@ context.  When called with an argument, unconditionally call
 
 (use-package! evil-mc)
 
-(add-hook 'eshell-mode-hook
-          (lambda ()
-            (define-key eshell-mode-map (kbd "C-c d") #'eshell-z)))
-
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
@@ -995,22 +918,6 @@ context.  When called with an argument, unconditionally call
           ".clangd")))
 
 (global-set-key (kbd "C-M-i") 'iedit-mode)
-
-(use-package! company
-  :after lsp-mode
-  :hook (lsp-mode . company-mode)
-  :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
-        (:map lsp-mode-map
-         ("<tab>" . company-indent-or-complete-common))
-  :config
-  (setq company-minimum-prefix-length 1)
-  (setq company-idle-delay 0.0)
-  (global-company-mode nil)
-  )
-
-(use-package! company-box
-  :hook (company-mode . company-box-mode))
 
 (defun my/get-gist (filepath)
   (interactive)
@@ -1092,7 +999,7 @@ context.  When called with an argument, unconditionally call
             (setq evil-shift-width 4)))
 
 (with-system windows-nt
-  (setq JAVA_BASE "c:/opt/jdks"))
+  (setq JAVA_BASE "C:/Users/gopinat/.jabba/jdk"))
 
 (with-system gnu/linux
   (setq JAVA_BASE "/usr/lib/jvm"))
@@ -1166,17 +1073,67 @@ context.  When called with an argument, unconditionally call
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 
+(setq growl "C:/Program Files (x86)/Growl for Windows/growlnotify.exe")
+
+(defun get-icon (mood)
+  (if (cl-equalp mood "happy")
+      "C:/Program Files/ShareX/Stickers/BlobEmoji/googlecatface.png"
+    "C:/Program Files/ShareX/Stickers/BlobEmoji/blobfacepalm.png"
+    )
+  )
+(defun my/growl-notify (mood title msg)
+  (call-process growl nil nil nil (concat "/t:" title )
+                (concat "/i:" (get-icon mood))
+                msg))
+
+;;(my/growl-notify "happy" "welcome!" "hello")
+
+(defun my/compile-on-save()
+  (interactive)
+  (setq response-javac (process-exit-code-and-output "javac" (file-name-nondirectory (buffer-file-name))))
+  (if (zerop (nth 0 response-javac))
+      (progn
+        (setq response-java
+              (process-exit-code-and-output
+               "java"
+               "-cp"
+               "."
+               (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))))
+        (my/growl-notify "happy" "Output" (nth 1 response-java)))
+    (my/growl-notify "sad" "Error" (nth 1 response-javac))
+    )
+  )
+
+
+(defun process-exit-code-and-output (program &rest args)
+  "Run PROGRAM with ARGS and return the exit code and output in a list."
+  (with-temp-buffer
+    (list (apply 'call-process program nil (current-buffer) nil args)
+          (buffer-string))))
+
+(define-minor-mode compile-on-save-mode
+  "Minor mode to automatically call `recompile' whenever the
+current buffer is saved. When there is ongoing compilation,
+nothing happens."
+  :lighter " CoS"
+  (if compile-on-save-mode
+      (progn
+        (setq super-save-mode nil)
+        (make-local-variable 'after-save-hook)
+        (add-hook 'after-save-hook 'my/compile-on-save nil t))
+    (kill-local-variable 'after-save-hook)))
+
 (use-package! lsp-java
   :init
   (with-system windows-nt
-    (setq lsp-java-java-path "C:/opt/jdks/openjdk-17/bin/java.exe"))
+    (setq lsp-java-java-path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0/bin/java.exe"))
   :config
   (with-system windows-nt
-    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-17"
-                                             :path "C:/opt/jdks/openjdk-17"
+    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-11"
+                                             :path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0"
                                              )
                                             (:name "JavaSE-1.8"
-                                             :path "C:/opt/jdks/jdk1.8.0_211"
+                                             :path "C:/Users/gopinat/.jabba/jdk/adopt@1.8.0-292"
                                              :default t
                                              )])))
 (after! lsp-mode
@@ -1185,7 +1142,7 @@ context.  When called with an argument, unconditionally call
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
 
 (use-package! aggressive-indent
-  :defer t
+  :defer 3
   :config
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
@@ -1290,7 +1247,38 @@ context.  When called with an argument, unconditionally call
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
-(defun my/create-trading-journal-entry ()
+(setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
+(defun my/chartgallery/add-entry-to-index(it)
+  (save-excursion
+    (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
+    (end-of-buffer)
+    (org-insert-heading)
+    (insert (read-string "Enter comments for the screenshot :"
+                         (concat (format-time-string "%Y-%m-%d-%a-"))))
+    (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
+    (org-display-inline-images)))
+
+
+(defun my/trading/save-screenshot-to-chart-gallery()
+  (interactive)
+  (save-excursion
+    (setq screenshot-file-name
+          (concat (my/clean-spaces-from-path
+                   (read-string "Enter file name :"
+                                (concat (format-time-string "%Y-%m-%d-%a-"))))
+                  ".png"))
+    (setq chart-gallery-path
+          (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
+    (make-directory chart-gallery-path :parents)
+    (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
+
+    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
+    (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
+    (my/chartgallery/add-entry-to-index myvar/relative-filename)
+    (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
+    (org-display-inline-images)))
+
+(defun my/trading/create-trading-journal-entry ()
   (interactive)
   (setq trade-journal-dir
         (concat

@@ -49,7 +49,7 @@
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;(unpin! t)
 
-(package! doct)
+(package! doct :disable t)
 (package! gitconfig-mode
           :recipe (:host github :repo "magit/git-modes"
                          :files ("gitconfig-mode.el")))
@@ -59,12 +59,13 @@
 
 (package! code-review :disable t)
 
-(package! atomic-chrome)
+(package! atomic-chrome :disable t)
 ;(package! org-msg)
 (package! org-super-links :recipe (:host github
                        :repo "toshism/org-super-links"
                        :files ("*.el")
-                       ))
+                       )
+  :disable t)
 
 (unpin! org-roam)
 (package! org-roam-ui)
@@ -74,12 +75,13 @@
 
 (package! pulsar)
 ;;(package! hl-line+)
-(package! company-box)
+(package! company-box :disable t)
 (package! popper)
 
 ;; ~/.doom.d/package.el
-(package! org-transclusion)
-(package! org-appear)
+(package! org-transclusion :disable t)
+(package! org-appear :disable t)
+
 ;;(package! ob-napkin)
 (package! org-super-agenda)
 (package! org-sidebar)
@@ -121,4 +123,6 @@
 
 (package! emacsql)
 (package! emacsql-sqlite)
-(package! hyperbole)
+(package! hyperbole :disable t)
+
+(package! esup :disable t)

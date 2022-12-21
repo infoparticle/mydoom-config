@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Oct 11, 2022 Tue"
+Last Saved: "Dec 21, 2022 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -28,7 +28,6 @@ Last Saved: "Oct 11, 2022 Tue"
     - [[#org-appear][org-appear]]
     - [[#org-sidebar][org-sidebar]]
     - [[#screenshot---windows][Screenshot - Windows]]
-    - [[#screenshot-for-chart-gallery][screenshot for chart gallery]]
     - [[#org-roam-and-org-roam-ui][org-roam and org-roam-ui]]
     - [[#org-transclusion][org-transclusion]]
     - [[#org-reveal][org-reveal]]
@@ -36,8 +35,10 @@ Last Saved: "Oct 11, 2022 Tue"
     - [[#spell-check][spell check]]
     - [[#split-org-src-block][split org-src-block]]
   - [[#functionality][Functionality]]
+    - [[#esup][esup]]
     - [[#scratch][scratch]]
     - [[#gnupg-gpg][GnuPG-gpg]]
+    - [[#server][server]]
     - [[#popper][popper]]
     - [[#pulsar][pulsar]]
     - [[#super-save][Super-save]]
@@ -61,6 +62,7 @@ Last Saved: "Oct 11, 2022 Tue"
     - [[#personal-info-help-pages][personal info help pages]]
     - [[#python][python]]
     - [[#java][java]]
+    - [[#java---compile-on-save][java - compile on save]]
     - [[#vterm][vterm]]
     - [[#lsp-java][lsp-java]]
     - [[#haskell][haskell]]
@@ -133,8 +135,8 @@ Get all fonts present
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
   ;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
-  (setq myfont "Fira Code Medium"  myfontsize 17)
-  ;(setq myfont "Iosevka Medium"  myfontsize 20)
+  ;;(setq myfont "Fira Code Medium"  myfontsize 17)
+  (setq myfont "Iosevka"  myfontsize 20)
   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
          doom-variable-pitch-font (font-spec :family "sans" :size 13))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
@@ -152,7 +154,7 @@ Get all fonts present
 (setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
-(setq doom-theme 'tao-yin)
+(setq doom-theme 'doom-zenburn)
 
 
 ;;  (setq hl-sexp-foreground-color nil
@@ -308,15 +310,15 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 
 #+begin_src emacs-lisp
 (use-package! org-auto-tangle
-  :defer t
+  :defer 3
   :hook (org-mode . org-auto-tangle-mode))
 #+end_src
 
 **** literate programming on save hooks
 
-proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py on save!
+;; proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py on save!
+;; has some problem 2022-10-29 Sat
 
-#+BEGIN_SRC emacs-lisp
 (defun my/org-babel-tangle-literate-file ()
   (interactive)
   (setq tangle_src (buffer-file-name))
@@ -359,7 +361,6 @@ proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py o
           (lambda ()
             (add-hook 'org-babel-post-tangle-hook #'my/org-babel-post-tangle-move-output-file)))
 
-#+END_SRC
 
 *** org captures
 
@@ -369,7 +370,7 @@ proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py o
 ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
 (use-package! doct
-  :defer t
+  :defer 3
   :demand t
   :commands (doct)
   :init (setq org-capture-templates
@@ -426,6 +427,7 @@ proj.litorg/a/b/myfile.py.org will automatically tangled to proj/a/b/myfile.py o
 #+begin_src emacs-lisp
 
 (global-set-key (kbd "C-c a") 'org-agenda-list)
+(global-set-key (kbd "M-,") 'execute-extended-command)
 #+end_src
 **** org-agenda keywords
 
@@ -486,7 +488,7 @@ cfw-org-calendar
 
 #+begin_src emacs-lisp
 (use-package! org-super-agenda
-  :defer t
+  :defer 3
   :commands org-super-agenda-mode)
 
 (after! org-agenda
@@ -572,17 +574,17 @@ cfw-org-calendar
 #+begin_src emacs-lisp
 
 (use-package! atomic-chrome
-  :defer t
+  :defer 3
  )
 #+end_src
 
 *** Org super links
 #+begin_src emacs-lisp
 (use-package! org-id
-  :defer t
+  :defer 3
   )
 (use-package! org-super-links
-  :defer t
+  :defer 3
     :bind (("C-c s s" . org-super-links-link)
          ("C-c s l" . org-super-links-store-link)
          ("C-c s C-l" . org-super-links-insert-link)
@@ -651,7 +653,7 @@ a separator ' -> '."
 
 #+begin_src emacs-lisp
 (use-package! org-appear
-  :defer         t
+  :defer 3
 
   :hook (org-mode . org-appear-mode)
   :config
@@ -666,7 +668,7 @@ a separator ' -> '."
 *** org-sidebar
 #+begin_src emacs-lisp
 (use-package! org-sidebar
-  :defer         t
+  :defer 3
                 )
 #+end_src
 
@@ -715,44 +717,6 @@ a separator ' -> '."
 
 
 (global-set-key [f5] 'my/org-screenshot)
-#+end_src
-
-*** screenshot for chart gallery
-
-#+begin_src emacs-lisp
-(setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
-(defun my/chartgallery/add-entry-to-index(it)
-  (save-excursion
-    (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
-    (end-of-buffer)
-    (org-insert-heading)
-    (insert (read-string "Enter comments for the screenshot :"
-                         (concat (format-time-string "%Y-%m-%d-%a-"))))
-    (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
-    (org-display-inline-images))
-  )
-
-
-(defun my/save-screenshot-to-chart-gallery()
-  (interactive)
-  (save-excursion
-    (setq screenshot-file-name
-          (concat (my/clean-spaces-from-path
-                   (read-string "Enter file name :"
-                                (concat (format-time-string "%Y-%m-%d-%a-"))))
-                  ".png"))
-    (setq chart-gallery-path
-          (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
-    (make-directory chart-gallery-path :parents)
-    (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
-
-    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
-    (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
-    (my/chartgallery/add-entry-to-index myvar/relative-filename)
-    (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
-    (org-display-inline-images)
-    )
-  )
 #+end_src
 
 *** org-roam and org-roam-ui
@@ -806,11 +770,11 @@ a separator ' -> '."
 
 
 (use-package! websocket
-  :defer         t
+  :defer 3
     :after org-roam)
 
 (use-package! org-roam-ui
-  :defer         t
+  :defer 3
     :after org-roam ;; or :after org
 ;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
 ;;         a hookable mode anymore, you're advised to pick something yourself
@@ -1030,6 +994,13 @@ context.  When called with an argument, unconditionally call
 #+END_SRC
 
 ** Functionality
+
+*** esup
+
+#+begin_src emacs-lisp
+(use-package! esup :ensure t)
+#+end_src
+
 *** scratch
 #+begin_src emacs-lisp
 (global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
@@ -1065,6 +1036,16 @@ context.  When called with an argument, unconditionally call
     (ad-activate 'epg--start)
     (message "EasyPG gpg-agent re-enabled")))
 #+end_src
+*** server
+
+(when (equal window-system 'w32)
+  (setq server-use-tcp t))
+(require 'server)
+;; Start a server if (server-running-p) does not return t (e.g. if it
+;; returns nil or :other)
+(or (eq (server-running-p) t)
+    (server-start))
+
 *** popper
 
 #+begin_src emacs-lisp
@@ -1192,7 +1173,7 @@ context.  When called with an argument, unconditionally call
 
 #+begin_src emacs-lisp
 (use-package! dired-sidebar
-  :defer t
+  :defer 3
   :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
   :commands (dired-sidebar-toggle-sidebar)
   :init
@@ -1309,11 +1290,12 @@ any directory proferred by `consult-dir'."
      (t (eshell/cd (if regexp (eshell-find-previous-directory regexp)
                      (completing-read "cd: " eshell-dirs)))))))
 
-#+begin_src emacs-lisp
 (add-hook 'eshell-mode-hook
           (lambda ()
-            (define-key eshell-mode-map (kbd "C-c d") #'eshell-z)))
-#+end_src
+            (progn
+              (define-key eshell-mode-map (kbd "C-c d") #'eshell-z)
+              (company-mode 1))))
+
 
 ** UI Stuff
 #+begin_src emacs-lisp
@@ -1324,7 +1306,7 @@ any directory proferred by `consult-dir'."
 *** beacon
 
 (use-package! beacon
-  :defer t
+  :defer 3
   :config
   (setq beacon-push-mark 35)
   (setq beacon-color "#666600")
@@ -1419,7 +1401,7 @@ any directory proferred by `consult-dir'."
 (global-set-key (kbd "C-M-i") 'iedit-mode)
 #+end_src
 *** company
-#+begin_src emacs-lisp
+
 (use-package! company
   :after lsp-mode
   :hook (lsp-mode . company-mode)
@@ -1435,7 +1417,7 @@ any directory proferred by `consult-dir'."
 
 (use-package! company-box
   :hook (company-mode . company-box-mode))
-#+end_src
+
 *** gist managment
 #+begin_src emacs-lisp
 (defun my/get-gist (filepath)
@@ -1523,6 +1505,9 @@ any directory proferred by `consult-dir'."
   :bind ("C-c y" . ivy-yasnippet))
 #+end_src
 
+#+RESULTS:
+: ivy-yasnippet
+
 *** personal info help pages
 
 ;; not needed now, we simply run through list of info files
@@ -1549,7 +1534,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
 
 #+begin_src emacs-lisp
 (with-system windows-nt
-  (setq JAVA_BASE "c:/opt/jdks"))
+  (setq JAVA_BASE "C:/Users/gopinat/.jabba/jdk"))
 
 (with-system gnu/linux
   (setq JAVA_BASE "/usr/lib/jvm"))
@@ -1631,6 +1616,61 @@ https://github.com/syl20bnr/spacemacs/issues/10160
         (nu-shell-prog "C:/Program Files/nu/bin/nu.exe"))
     (make-comint-in-buffer "shell" "*nu-shell*" nu-shell-prog)
     (switch-to-buffer buffer)))
+*** java - compile on save
+
+#+BEGIN_SRC emacs-lisp
+
+(setq growl "C:/Program Files (x86)/Growl for Windows/growlnotify.exe")
+
+(defun get-icon (mood)
+  (if (cl-equalp mood "happy")
+      "C:/Program Files/ShareX/Stickers/BlobEmoji/googlecatface.png"
+    "C:/Program Files/ShareX/Stickers/BlobEmoji/blobfacepalm.png"
+    )
+  )
+(defun my/growl-notify (mood title msg)
+  (call-process growl nil nil nil (concat "/t:" title )
+                (concat "/i:" (get-icon mood))
+                msg))
+
+;;(my/growl-notify "happy" "welcome!" "hello")
+
+(defun my/compile-on-save()
+  (interactive)
+  (setq response-javac (process-exit-code-and-output "javac" (file-name-nondirectory (buffer-file-name))))
+  (if (zerop (nth 0 response-javac))
+      (progn
+        (setq response-java
+              (process-exit-code-and-output
+               "java"
+               "-cp"
+               "."
+               (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))))
+        (my/growl-notify "happy" "Output" (nth 1 response-java)))
+    (my/growl-notify "sad" "Error" (nth 1 response-javac))
+    )
+  )
+
+
+(defun process-exit-code-and-output (program &rest args)
+  "Run PROGRAM with ARGS and return the exit code and output in a list."
+  (with-temp-buffer
+    (list (apply 'call-process program nil (current-buffer) nil args)
+          (buffer-string))))
+
+(define-minor-mode compile-on-save-mode
+  "Minor mode to automatically call `recompile' whenever the
+current buffer is saved. When there is ongoing compilation,
+nothing happens."
+  :lighter " CoS"
+  (if compile-on-save-mode
+      (progn
+        (setq super-save-mode nil)
+        (make-local-variable 'after-save-hook)
+        (add-hook 'after-save-hook 'my/compile-on-save nil t))
+    (kill-local-variable 'after-save-hook)))
+
+#+END_SRC
 
 *** vterm
 (add-to-list 'load-path "c:\\opt\\emacs-libvterm\\")
@@ -1642,14 +1682,14 @@ https://github.com/syl20bnr/spacemacs/issues/10160
 (use-package! lsp-java
   :init
   (with-system windows-nt
-    (setq lsp-java-java-path "C:/opt/jdks/openjdk-17/bin/java.exe"))
+    (setq lsp-java-java-path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0/bin/java.exe"))
   :config
   (with-system windows-nt
-    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-17"
-                                             :path "C:/opt/jdks/openjdk-17"
+    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-11"
+                                             :path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0"
                                              )
                                             (:name "JavaSE-1.8"
-                                             :path "C:/opt/jdks/jdk1.8.0_211"
+                                             :path "C:/Users/gopinat/.jabba/jdk/adopt@1.8.0-292"
                                              :default t
                                              )])))
 (after! lsp-mode
@@ -1674,7 +1714,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
 
 #+begin_src emacs-lisp
 (use-package! aggressive-indent
-  :defer t
+  :defer 3
   :config
   (add-hook 'lisp-mode-hook 'aggressive-indent-mode))
 
@@ -1805,8 +1845,40 @@ https://github.com/syl20bnr/spacemacs/issues/10160
 #+end_src
 
 *** Create Trading Journal Entry
+
 #+begin_src emacs-lisp
-(defun my/create-trading-journal-entry ()
+(setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
+(defun my/chartgallery/add-entry-to-index(it)
+  (save-excursion
+    (find-file (concat trading-wiki-root "contents/chart-gallery/chart-gallery-index.org"))
+    (end-of-buffer)
+    (org-insert-heading)
+    (insert (read-string "Enter comments for the screenshot :"
+                         (concat (format-time-string "%Y-%m-%d-%a-"))))
+    (insert "\n#+ATTR_ORG: :width 400\n[[file:"  it "]]" "\n")
+    (org-display-inline-images)))
+
+
+(defun my/trading/save-screenshot-to-chart-gallery()
+  (interactive)
+  (save-excursion
+    (setq screenshot-file-name
+          (concat (my/clean-spaces-from-path
+                   (read-string "Enter file name :"
+                                (concat (format-time-string "%Y-%m-%d-%a-"))))
+                  ".png"))
+    (setq chart-gallery-path
+          (concat trading-wiki-root "contents/chart-gallery/" (format-time-string "%Y/%Y-%m-%b/")))
+    (make-directory chart-gallery-path :parents)
+    (setq myvar/img-Abs-Path (replace-regexp-in-string "/" "\\" (concat chart-gallery-path screenshot-file-name)  t t)) ;Relative to workspace.
+
+    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil (concat "/clippaste /convert="  myvar/img-Abs-Path))
+    (setq myvar/relative-filename (concat "./"   (format-time-string "%Y/%Y-%m-%b/") screenshot-file-name))
+    (my/chartgallery/add-entry-to-index myvar/relative-filename)
+    (org-insert-link 0 (concat "file:" myvar/img-Abs-Path) nil)
+    (org-display-inline-images)))
+
+(defun my/trading/create-trading-journal-entry ()
   (interactive)
   (setq trade-journal-dir
         (concat
