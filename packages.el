@@ -126,3 +126,5 @@
 (package! hyperbole :disable t)
 
 (package! esup :disable t)
+
+(package! helm-posframe)

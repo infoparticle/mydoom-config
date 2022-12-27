@@ -584,7 +584,8 @@ a separator ' -> '."
 (setq ispell-local-dictionary-alist
       '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
 
-(setq text-mode-hook '(lambda() (flyspell-mode t)))
+;;enable when needed
+;;(setq text-mode-hook '(lambda() (flyspell-mode t)))
 
 (defun modi/org-in-any-block-p ()
   "Return non-nil if the point is in any Org block.
@@ -877,6 +878,10 @@ context.  When called with an argument, unconditionally call
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
+(after! helm
+  (setq helm-echo-input-in-header-line t)
+  (helm-posframe-enable))
+
 (with-eval-after-load 'projectile
   (with-system windows-nt
     (projectile-register-project-type 'maven '("pom.xml")
@@ -998,6 +1003,10 @@ context.  When called with an argument, unconditionally call
             (setq tab-width 4)
             (setq evil-shift-width 4)))
 
+(after! Cider
+ (map! :map cider-mode-map
+      :n "M-RET" #'cider-eval-defun-at-point))
+
 (with-system windows-nt
   (setq JAVA_BASE "C:/Users/gopinat/.jabba/jdk"))
 
@@ -1073,23 +1082,20 @@ context.  When called with an argument, unconditionally call
     (make-comint-in-buffer "shell" "*powershell*" powershell-prog)
     (switch-to-buffer buffer)))
 
-(setq growl "C:/Program Files (x86)/Growl for Windows/growlnotify.exe")
-
-(defun get-icon (mood)
-  (if (cl-equalp mood "happy")
-      "C:/Program Files/ShareX/Stickers/BlobEmoji/googlecatface.png"
-    "C:/Program Files/ShareX/Stickers/BlobEmoji/blobfacepalm.png"
-    )
-  )
-(defun my/growl-notify (mood title msg)
-  (call-process growl nil nil nil (concat "/t:" title )
-                (concat "/i:" (get-icon mood))
-                msg))
-
-;;(my/growl-notify "happy" "welcome!" "hello")
+(defun show-alert (output-message background-color foreground-color)
+  (when (posframe-workable-p)
+    (posframe-show "*my-posframe-build-output-buffer*"
+                   :poshandler #'posframe-poshandler-frame-top-right-corner
+                   :string (concat (format-time-string "\n[%Y-%m-%d %H:%M:%S]\n\n") output-message "\n")
+                   :timeout 10
+                   :right-fringe 10
+                   :left-fringe 10
+                   :border-width 1
+                   :border-color foreground-color
+                   :background-color background-color
+                   :foreground-color foreground-color)))
 
 (defun my/compile-on-save()
-  (interactive)
   (setq response-javac (process-exit-code-and-output "javac" (file-name-nondirectory (buffer-file-name))))
   (if (zerop (nth 0 response-javac))
       (progn
@@ -1099,8 +1105,8 @@ context.  When called with an argument, unconditionally call
                "-cp"
                "."
                (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))))
-        (my/growl-notify "happy" "Output" (nth 1 response-java)))
-    (my/growl-notify "sad" "Error" (nth 1 response-javac))
+        (show-alert (nth 1 response-java) nil "green"))
+    (show-alert (nth 1 response-javac) nil "yellow")
     )
   )
 
