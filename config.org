@@ -4,13 +4,14 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Dec 24, 2022 Sat"
+Last Saved: "Mar 17, 2023 Fri"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
   - [[#useful-macros][Useful Macros]]
   - [[#default-config][Default Config]]
     - [[#fonts-and-themes][Fonts and Themes]]
+    - [[#encoding-for-windows][encoding for windows]]
     - [[#others][Others]]
       - [[#calendar-add-weeks][Calendar add weeks]]
   - [[#org-mode][Org mode]]
@@ -19,6 +20,8 @@ Last Saved: "Dec 24, 2022 Sat"
     - [[#org-babel][Org babel]]
       - [[#literate-programming-on-save-hooks][literate programming on save hooks]]
     - [[#org-captures][org captures]]
+      - [[#old-code][old code]]
+      - [[#actual-code-for-org-captures][actual code for org captures]]
     - [[#org-agenda][org-agenda]]
       - [[#org-agenda-keywords][org-agenda keywords]]
       - [[#org-cyrpt][org cyrpt]]
@@ -140,7 +143,7 @@ Get all fonts present
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
   (setq myfont "Iosevka"  myfontsize 20)
   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 13))
+         doom-variable-pitch-font (font-spec :family "sans" :size 18))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
   ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
@@ -163,6 +166,14 @@ Get all fonts present
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 #+end_src
+
+*** encoding for windows
+from: https://rufflewind.com/2014-07-20/pasting-unicode-in-emacs-on-windows
+#+begin_src emacs-lisp
+(with-system windows-nt
+  (set-selection-coding-system 'utf-16-le))
+#+end_src
+
 
 *** Others
 
@@ -365,63 +376,101 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 
 
 *** org captures
+**** old code
+(after! org
+  (use-package! doct
+    :defer 3
+    :demand t
+    :commands (doct)
+    :init (add-to-list org-capture-templates
+                (doct '(("TODO"
+                         :keys "t"
+                         :children (("life"
+                                     :keys "l"
+                                     :template ("* TODO %^{Description}"
+                                                ;;"SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+1d\"))"
+                                                "%^{SCHEDULED}p"
+                                                ":PROPERTIES:"
+                                                ":Category: %^{Home|Family|Friends|Learnings|Misc}"
+                                                ":END:"
+                                                )
+                                     :headline "Personal Tasks"
+                                     :file my-org-todo-file)
+                                    ("work"
+                                     :keys "w"
+                                     :template ("* TODO %^{Description}"
+                                                "%^{SCHEDULED}p"
+                                                ":PROPERTIES:"
+                                                ":Category: %^{sprint|learning|Misc}"
+                                                ":Created: %U"
+                                                ":END:"
+                                                ":LOGBOOK:"
+                                                "- State \"TODO\"       from \"\"           %U"
+                                                ":END:")
+                                     :headline "Work Tasks"
+                                     :file  my-org-todo-file)))
+                        ("work"
+                         :keys "w"
+                         :children (("meeting"
+                                     :keys "m"
+                                     :template ("* %U Meeting notes %U\n%?\n\n")
+                                     :headline "Meeting Notes"
+                                     :file  my-org-todo-file)
+                                    ("work"
+                                     :keys "w"
+                                     :template ("* TODO %^{Description}"
+                                                "%^{SCHEDULED}p"
+                                                ":PROPERTIES:"
+                                                ":Category: %^{sprint|learning|Misc}"
+                                                ":Created: %U"
+                                                ":END:"
+                                                ":LOGBOOK:"
+                                                "- State \"TODO\"       from \"\"           %U"
+                                                ":END:")
+                                     :headline "Work Tasks"
+                                     :file my-org-todo-file)))
+
+                        ("Journal"
+                         :keys "j"
+                         :prepend t
+                         :children (("private journal"
+                                     :keys "p"
+                                     :file "c:/my/org-0.10.d/private/journal/yearly-journal.org.gpg"
+                                     :template ("* %?" "%U")
+                                     :datetree t
+                                     :time-prompt t
+                                     :unnarrowed  t
+                                     )
+                                    ("apm-journal"
+                                     :keys "a"
+                                     :file "c:/my/work/apm-bpm/apmbpm.git/private/agenda/apm-journal.org"
+                                     :template ("* %?" "%U")
+                                     :datetree t)
+                                    ))
+                        )))))
+**** actual code for org captures
 
 #+begin_src emacs-lisp
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
-;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
-;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
+(setq my-org-ws-meetings-file "c:/ws/meetings/meetings.org")
+                                        ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
+                                        ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
-(use-package! doct
-  :defer 3
-  :demand t
-  :commands (doct)
-  :init (setq org-capture-templates
-              (doct '(("TODO"
-                       :keys "t"
-                       :children (("life"
-                                   :keys "l"
-                                   :template ("* TODO %^{Description}"
-                                              ;;"SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+1d\"))"
-                                              "%^{SCHEDULED}p"
-                                              ":PROPERTIES:"
-                                              ":Category: %^{Home|Family|Friends|Learnings|Misc}"
-                                              ":END:"
-                                              )
-                                   :headline "Personal Tasks"
-                                   :file my-org-todo-file)
-                                  ("work"
-                                   :keys "w"
-                                   :template ("* TODO %^{Description}"
-                                              "%^{SCHEDULED}p"
-                                              ":PROPERTIES:"
-                                              ":Category: %^{sprint|learning|Misc}"
-                                              ":Created: %U"
-                                              ":END:"
-                                              ":LOGBOOK:"
-                                              "- State \"TODO\"       from \"\"           %U"
-                                              ":END:")
-                                   :headline "Work Tasks"
-                                   :file my-org-todo-file)))
-
-                      ("Journal"
-                       :keys "j"
-                       :prepend t
-                       :children (("private journal"
-                                   :keys "p"
-                                   :file "c:/my/org-0.10.d/private/journal/yearly-journal.org.gpg"
-                                   :template ("* %?" "%U")
-                                   :datetree t
-                                   :time-prompt t
-                                   :unnarrowed  t
-                                   )
-                                  ("apm-journal"
-                                   :keys "a"
-                                   :file "c:/my/work/apm-bpm/apmbpm.git/private/agenda/apm-journal.org"
-                                   :template ("* %?" "%U")
-                                   :datetree t)
-                                  ))
-
-                      ))))
+(defun my/org-capture-file-name ()
+  "Prompt for a file name with a timestamp."
+  (concat (format-time-string "c:/ws/quicknotes/%Y-%m-%d-")
+          (read-string "Title : ")
+          ".org"))
+(after! org
+  (setq org-capture-templates nil)
+  (add-to-list 'org-capture-templates
+               '("w" "Work" entry
+                 (file my/org-capture-file-name)
+                 "* %?"))
+  (add-to-list 'org-capture-templates
+               '("j" "Journal" entry
+                 (file "~/Dropbox/org/gtd/journal.org")
+                 "* TODO %?")))
 #+end_src
 
 *** org-agenda
@@ -1675,12 +1724,12 @@ https://github.com/syl20bnr/spacemacs/issues/10160
     (list (apply 'call-process program nil (current-buffer) nil args)
           (buffer-string))))
 
-(define-minor-mode compile-on-save-mode
+(define-minor-mode java-compile-on-save-mode
   "Minor mode to automatically call `recompile' whenever the
 current buffer is saved. When there is ongoing compilation,
 nothing happens."
   :lighter " CoS"
-  (if compile-on-save-mode
+  (if java-compile-on-save-mode
       (progn
         (setq super-save-mode nil)
         (make-local-variable 'after-save-hook)
@@ -1825,7 +1874,12 @@ nothing happens."
 
 (map! :leader
       :desc "New journal entry"
-      "o w" #'my/pick-wiki-name)
+      "o W" #'my/pick-wiki-name)
+
+(map! :leader
+      :desc "New journal entry"
+      "o w" #'my/pick-work-projects-name)
+
 #+end_src
 
 
@@ -1835,18 +1889,19 @@ nothing happens."
 (defun my/pick-wiki-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files wiki-root))))
-(defun my/open-wiki (wiki-root wiki-name)
-  (if(file-directory-p wiki-root)
+
+(defun my/open-wiki (wiki-root-arg wiki-name)
+  (if(file-directory-p wiki-root-arg)
       (progn
         ;(persp-mode t)
         ;(persp-frame-switch wiki-name)
         (delete-other-windows)
-        (find-file  (concat wiki-root "/" wiki-name "/contents/index.org"))
+        (find-file  (concat wiki-root-arg "/" wiki-name "/contents/index.org"))
         (split-window-right 30)
-        (find-file-other-window (concat wiki-root "/" wiki-name "/tmp/" wiki-name "-" "inbox.org"))
-        (when (file-exists-p  (concat wiki-root "/" ".config.el"))
-          (load-file  (concat wiki-root "/" ".config.el"))))
-    (message "Wiki not found %s" wiki-root)))
+        (find-file-other-window (concat wiki-root-arg "/" wiki-name "/tmp/" wiki-name "-" "inbox.org"))
+        (when (file-exists-p  (concat wiki-root-arg "/" ".config.el"))
+          (load-file  (concat wiki-root-arg "/" ".config.el"))))
+    (message "Wiki not found %s" wiki-root-arg)))
 
 (defun my/pick-wiki-name-action (x)
   (my/open-wiki  wiki-root x))
@@ -1859,7 +1914,27 @@ nothing happens."
             :require-match t
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
+
+(defun my/pick-work-projects-name-action-list-candidates (str pred _)
+  (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                 (directory-files "c:/my/work/work-projects"))))
+
+(defun my/pick-work-projects-name-action (x)
+  (my/open-wiki "C:/my/work/work-projects" x))
+
+(defun my/pick-work-projects-name ()
+  "pick a wiki from dropbox folder."
+  (interactive)
+  (ivy-read "List of wikis: "  #'my/pick-work-projects-name-action-list-candidates
+            :preselect (ivy-thing-at-point)
+            :require-match t
+            :action #'my/pick-work-projects-name-action
+            :caller 'my/pick-work-projects-name))
+
 #+end_src
+
+#+RESULTS:
+: my/pick-wiki-name
 
 *** Create Trading Journal Entry
 
@@ -2185,16 +2260,16 @@ TODO: Should copy general package configs to simplify keybindings.
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/rum-tasks.org"))
 
 
-(defun my/open/org-second-brain ()
+(defun my/open/quick-notes ()
   (interactive)
   (split-window-right)
-  (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
+  (find-file "c:/ws/quicknotes/quicknotes-index.org"))
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
       "1" #'my/open/work-rum-tasks
-      "2" #'my/open/org-second-brain
+      "2" #'my/open/quick-notes
       )
 #+end_src
 

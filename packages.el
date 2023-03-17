@@ -59,7 +59,9 @@
 
 (package! code-review :disable t)
 
-(package! atomic-chrome :disable t)
+;(package! atomic-chrome :disable t)
+(package! atomic-chrome)
+
 ;(package! org-msg)
 (package! org-super-links :recipe (:host github
                        :repo "toshism/org-super-links"

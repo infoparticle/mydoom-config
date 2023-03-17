@@ -31,7 +31,7 @@
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
   (setq myfont "Iosevka"  myfontsize 20)
   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 13))
+         doom-variable-pitch-font (font-spec :family "sans" :size 18))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
   ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
@@ -53,6 +53,9 @@
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
+
+(with-system windows-nt
+  (set-selection-coding-system 'utf-16-le))
 
 (setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
@@ -176,60 +179,25 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
   :hook (org-mode . org-auto-tangle-mode))
 
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
-;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
-;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
+(setq my-org-ws-meetings-file "c:/ws/meetings/meetings.org")
+                                        ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
+                                        ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
 
-(use-package! doct
-  :defer 3
-  :demand t
-  :commands (doct)
-  :init (setq org-capture-templates
-              (doct '(("TODO"
-                       :keys "t"
-                       :children (("life"
-                                   :keys "l"
-                                   :template ("* TODO %^{Description}"
-                                              ;;"SCHEDULED: %(org-insert-time-stamp (org-read-date nil t \"+1d\"))"
-                                              "%^{SCHEDULED}p"
-                                              ":PROPERTIES:"
-                                              ":Category: %^{Home|Family|Friends|Learnings|Misc}"
-                                              ":END:"
-                                              )
-                                   :headline "Personal Tasks"
-                                   :file my-org-todo-file)
-                                  ("work"
-                                   :keys "w"
-                                   :template ("* TODO %^{Description}"
-                                              "%^{SCHEDULED}p"
-                                              ":PROPERTIES:"
-                                              ":Category: %^{sprint|learning|Misc}"
-                                              ":Created: %U"
-                                              ":END:"
-                                              ":LOGBOOK:"
-                                              "- State \"TODO\"       from \"\"           %U"
-                                              ":END:")
-                                   :headline "Work Tasks"
-                                   :file my-org-todo-file)))
-
-                      ("Journal"
-                       :keys "j"
-                       :prepend t
-                       :children (("private journal"
-                                   :keys "p"
-                                   :file "c:/my/org-0.10.d/private/journal/yearly-journal.org.gpg"
-                                   :template ("* %?" "%U")
-                                   :datetree t
-                                   :time-prompt t
-                                   :unnarrowed  t
-                                   )
-                                  ("apm-journal"
-                                   :keys "a"
-                                   :file "c:/my/work/apm-bpm/apmbpm.git/private/agenda/apm-journal.org"
-                                   :template ("* %?" "%U")
-                                   :datetree t)
-                                  ))
-
-                      ))))
+(defun my/org-capture-file-name ()
+  "Prompt for a file name with a timestamp."
+  (concat (format-time-string "c:/ws/quicknotes/%Y-%m-%d-")
+          (read-string "Title : ")
+          ".org"))
+(after! org
+  (setq org-capture-templates nil)
+  (add-to-list 'org-capture-templates
+               '("w" "Work" entry
+                 (file my/org-capture-file-name)
+                 "* %?"))
+  (add-to-list 'org-capture-templates
+               '("j" "Journal" entry
+                 (file "~/Dropbox/org/gtd/journal.org")
+                 "* TODO %?")))
 
 (global-set-key (kbd "C-c a") 'org-agenda-list)
 (global-set-key (kbd "M-,") 'execute-extended-command)
@@ -1117,12 +1085,12 @@ context.  When called with an argument, unconditionally call
     (list (apply 'call-process program nil (current-buffer) nil args)
           (buffer-string))))
 
-(define-minor-mode compile-on-save-mode
+(define-minor-mode java-compile-on-save-mode
   "Minor mode to automatically call `recompile' whenever the
 current buffer is saved. When there is ongoing compilation,
 nothing happens."
   :lighter " CoS"
-  (if compile-on-save-mode
+  (if java-compile-on-save-mode
       (progn
         (setq super-save-mode nil)
         (make-local-variable 'after-save-hook)
@@ -1221,25 +1189,30 @@ nothing happens."
 
 (map! :leader
       :desc "New journal entry"
-      "o w" #'my/pick-wiki-name)
+      "o W" #'my/pick-wiki-name)
+
+(map! :leader
+      :desc "New journal entry"
+      "o w" #'my/pick-work-projects-name)
 
 (setq wiki-root "C:\\Users\\gopinat\\Dropbox\\emacs-apps\\wikis")
 
 (defun my/pick-wiki-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files wiki-root))))
-(defun my/open-wiki (wiki-root wiki-name)
-  (if(file-directory-p wiki-root)
+
+(defun my/open-wiki (wiki-root-arg wiki-name)
+  (if(file-directory-p wiki-root-arg)
       (progn
         ;(persp-mode t)
         ;(persp-frame-switch wiki-name)
         (delete-other-windows)
-        (find-file  (concat wiki-root "/" wiki-name "/contents/index.org"))
+        (find-file  (concat wiki-root-arg "/" wiki-name "/contents/index.org"))
         (split-window-right 30)
-        (find-file-other-window (concat wiki-root "/" wiki-name "/tmp/" wiki-name "-" "inbox.org"))
-        (when (file-exists-p  (concat wiki-root "/" ".config.el"))
-          (load-file  (concat wiki-root "/" ".config.el"))))
-    (message "Wiki not found %s" wiki-root)))
+        (find-file-other-window (concat wiki-root-arg "/" wiki-name "/tmp/" wiki-name "-" "inbox.org"))
+        (when (file-exists-p  (concat wiki-root-arg "/" ".config.el"))
+          (load-file  (concat wiki-root-arg "/" ".config.el"))))
+    (message "Wiki not found %s" wiki-root-arg)))
 
 (defun my/pick-wiki-name-action (x)
   (my/open-wiki  wiki-root x))
@@ -1252,6 +1225,22 @@ nothing happens."
             :require-match t
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
+
+(defun my/pick-work-projects-name-action-list-candidates (str pred _)
+  (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
+                                 (directory-files "c:/my/work/work-projects"))))
+
+(defun my/pick-work-projects-name-action (x)
+  (my/open-wiki "C:/my/work/work-projects" x))
+
+(defun my/pick-work-projects-name ()
+  "pick a wiki from dropbox folder."
+  (interactive)
+  (ivy-read "List of wikis: "  #'my/pick-work-projects-name-action-list-candidates
+            :preselect (ivy-thing-at-point)
+            :require-match t
+            :action #'my/pick-work-projects-name-action
+            :caller 'my/pick-work-projects-name))
 
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)
@@ -1512,16 +1501,16 @@ nothing happens."
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/rum-tasks.org"))
 
 
-(defun my/open/org-second-brain ()
+(defun my/open/quick-notes ()
   (interactive)
   (split-window-right)
-  (find-file "c:/my/org-0.10.d/meta/cat-index.org"))
+  (find-file "c:/ws/quicknotes/quicknotes-index.org"))
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
       "1" #'my/open/work-rum-tasks
-      "2" #'my/open/org-second-brain
+      "2" #'my/open/quick-notes
       )
 
 (with-system windows-nt
