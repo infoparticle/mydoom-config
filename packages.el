@@ -111,8 +111,12 @@
 ;(package! multiple-cursors)
 (package! evil-mc)
 
+(package! key-chord)
 
+;; rust
+(package! rust-mode)
 (package! rustic)
+
 ;;(package! slime)
 (package! restclient)
 (package! ob-restclient)

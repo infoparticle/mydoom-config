@@ -1097,23 +1097,45 @@ nothing happens."
         (add-hook 'after-save-hook 'my/compile-on-save nil t))
     (kill-local-variable 'after-save-hook)))
 
-(use-package! lsp-java
-  :init
-  (with-system windows-nt
-    (setq lsp-java-java-path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0/bin/java.exe"))
-  :config
-  (with-system windows-nt
-    (setq lsp-java-configuration-runtimes '[(:name "OpenJDK-11"
-                                             :path "C:/Users/gopinat/.jabba/jdk/openjdk@1.11.0"
-                                             )
-                                            (:name "JavaSE-1.8"
-                                             :path "C:/Users/gopinat/.jabba/jdk/adopt@1.8.0-292"
-                                             :default t
-                                             )])))
-(after! lsp-mode
-  (advice-remove #'lsp #'+lsp-dont-prompt-to-install-servers-maybe-a))
-
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
+
+(after! rustic-flycheck
+  (customize-set-variable 'rustic-flycheck-clippy-params-stable
+                          (concat rustic-flycheck-clippy-params-stable " --target x86_64-unknown-linux-gnu"))
+  (add-to-list 'flycheck-checkers 'rustic-clippy)
+  (delete 'rust-clippy flycheck-checkers)
+  (delete 'rust-cargo flycheck-checkers)
+  (delete 'rust flycheck-checkers))
+
+(after! lsp-rust
+  (setq lsp-rust-analyzer-cargo-watch-command "check"))
+
+(after! rustic
+  (map! :map rustic-mode-map
+        "M-j" #'lsp-ui-imenu
+        "M-?" #'lsp-find-references
+        "C-c C-c C-c" #'rustic-compile
+        "C-c C-c l" #'flycheck-list-errors
+        "C-c C-c a" #'lsp-execute-code-action
+        "C-c C-c r" #'lsp-rename
+        "C-c C-c q" #'lsp-workspace-restart
+        "C-c C-c Q" #'lsp-workspace-shutdown
+        "C-c C-c s" #'lsp-rust-analyzer-status)
+  (setq lsp-enable-symbol-highlighting nil)
+  (setq rustic-format-trigger nil)
+  (add-hook 'rustic-mode-hook 'my/rustic-mode-hook)
+  (setq lsp-rust-analyzer-server-display-inlay-hints nil)
+  (customize-set-variable 'lsp-ui-doc-enable nil)
+  (add-hook 'lsp-ui-mode-hook #'(lambda () (lsp-ui-sideline-enable nil))))
+
+
+(defun my/rustic-mode-hook ()
+  ;; so that run C-c C-c C-r works without having to confirm, but don't try to
+  ;; save rust buffers that are not file visiting. Once
+  ;; https://github.com/brotzeit/rustic/issues/253 has been resolved this should
+  ;; no longer be necessary.
+  (when buffer-file-name
+    (setq-local buffer-save-without-query t)))
 
 (use-package! aggressive-indent
   :defer 3
@@ -1241,6 +1263,27 @@ nothing happens."
             :require-match t
             :action #'my/pick-work-projects-name-action
             :caller 'my/pick-work-projects-name))
+
+(defun my/create-projects (root-dir)
+  "Create a file with date stamp and title as its name under the project directory and open it for editing."
+  (interactive "DDirectory: ")
+  (let* ((project (read-from-minibuffer "Project name: "))
+         (title (read-from-minibuffer "Title: "))
+         (date-stamp (format-time-string "%Y-%m-%d"))
+         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" project))
+         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase title)) ".org"))
+         (file-path (concat (file-name-as-directory project-dir) file-name)))
+    (unless (file-directory-p project-dir)
+      (make-directory project-dir))
+    (find-file file-path)
+    (save-buffer)))
+(defun my/create-projects-wrapper()
+  (interactive)
+  (my/create-projects "c:/my/work/work-projects"))
+
+(map! :leader
+      :desc "New journal entry"
+      "<f2> c" #'my/create-projects-wrapper)
 
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)
