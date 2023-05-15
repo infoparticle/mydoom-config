@@ -442,7 +442,7 @@ a separator ' -> '."
   (org-display-inline-images))
 
 
-(global-set-key [f5] 'my/org-screenshot)
+(global-set-key (kbd "C-<f5>") 'my/org-screenshot)
 
 (after! org-roam
   (setq org-roam-directory (file-truename "c:/my/org-roam"))
@@ -630,6 +630,16 @@ context.  When called with an argument, unconditionally call
                                 ((modi/org-in-any-block-p) #'modi/org-split-block)
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
+
+(require 'key-chord)
+
+(key-chord-define-global "BB" 'iswitchb)
+(key-chord-define-global "FF" 'find-file)
+(key-chord-define-global "jk" 'mode-line-other-buffer)
+(key-chord-define-global "HH" 'previous-buffer)
+(key-chord-define-global "LL" 'next-buffer)
+
+(key-chord-mode +1)
 
 (use-package! esup :ensure t)
 
@@ -1078,6 +1088,13 @@ context.  When called with an argument, unconditionally call
     )
   )
 
+(defun my/rust-compile-on-save()
+  (interactive)
+  (setq response-process-exec (process-exit-code-and-output
+                        "cargo" "run"))
+  (if (zerop (nth 0 response-process-exec))
+      (show-alert (nth 1 response-process-exec) nil "green")
+    (show-alert (nth 1 response-process-exec) nil "yellow")))
 
 (defun process-exit-code-and-output (program &rest args)
   "Run PROGRAM with ARGS and return the exit code and output in a list."
@@ -1097,6 +1114,17 @@ nothing happens."
         (add-hook 'after-save-hook 'my/compile-on-save nil t))
     (kill-local-variable 'after-save-hook)))
 
+(define-minor-mode rust-compile-on-save-mode
+  "Minor mode to automatically call `recompile' whenever the
+current buffer is saved. When there is ongoing compilation,
+nothing happens."
+  :lighter " CoS"
+  (if rust-compile-on-save-mode
+      (progn
+        (setq super-save-mode nil)
+        (add-hook 'after-save-hook 'my/rust-compile-on-save nil t))
+    (remove-hook 'after-save-hook 'my/rust-compile-on-save nil t)))
+
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
 
 (after! rustic-flycheck
@@ -1110,6 +1138,10 @@ nothing happens."
 (after! lsp-rust
   (setq lsp-rust-analyzer-cargo-watch-command "check"))
 
+(map! :after rust-mode
+      :map rust-mode-map
+      :nvi "<f5>" #'my/rust-compile-on-save
+      )
 (after! rustic
   (map! :map rustic-mode-map
         "M-j" #'lsp-ui-imenu
@@ -1178,6 +1210,10 @@ nothing happens."
   ;; (setq lsp-signature-auto-activate nil)
 
   ;; comment to disable rustfmt on save
+
+  (map! :leader
+        :desc "exec cargo run"
+        "r" #'rustic-cargo-run)
   (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
@@ -1213,10 +1249,6 @@ nothing happens."
       :desc "New journal entry"
       "o W" #'my/pick-wiki-name)
 
-(map! :leader
-      :desc "New journal entry"
-      "o w" #'my/pick-work-projects-name)
-
 (setq wiki-root "C:\\Users\\gopinat\\Dropbox\\emacs-apps\\wikis")
 
 (defun my/pick-wiki-name-action-list-candidates (str pred _)
@@ -1251,9 +1283,15 @@ nothing happens."
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files "c:/my/work/work-projects"))))
+(defun my/open-work-project (work-proj-root-arg work-proj-name)
+  (if(file-directory-p work-proj-root-arg)
+      (progn
+        (delete-other-windows)
+        (find-file  (concat work-proj-root-arg "/" work-proj-name "/" work-proj-name "-index.org")))
+    (message "project not found %s" work-proj-root-arg)))
 
 (defun my/pick-work-projects-name-action (x)
-  (my/open-wiki "C:/my/work/work-projects" x))
+  (my/open-work-project "C:/my/work/work-projects" x))
 
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
@@ -1268,10 +1306,9 @@ nothing happens."
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
-         (title (read-from-minibuffer "Title: "))
          (date-stamp (format-time-string "%Y-%m-%d"))
-         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" project))
-         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase title)) ".org"))
+         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project))))
+         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))
@@ -1282,8 +1319,10 @@ nothing happens."
   (my/create-projects "c:/my/work/work-projects"))
 
 (map! :leader
-      :desc "New journal entry"
-      "<f2> c" #'my/create-projects-wrapper)
+      :desc "create or open projects"
+      "<f2> c" #'my/create-projects-wrapper
+      "<f2> o" #'my/pick-work-projects-name
+      )
 
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)

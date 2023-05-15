@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Apr 11, 2023 Tue"
+Last Saved: "May 15, 2023 Mon"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -38,6 +38,7 @@ Last Saved: "Apr 11, 2023 Tue"
     - [[#spell-check][spell check]]
     - [[#split-org-src-block][split org-src-block]]
   - [[#functionality][Functionality]]
+    - [[#key-chord][key-chord]]
     - [[#esup][esup]]
     - [[#scratch][scratch]]
     - [[#gnupg-gpg][GnuPG-gpg]]
@@ -768,7 +769,7 @@ a separator ' -> '."
   (org-display-inline-images))
 
 
-(global-set-key [f5] 'my/org-screenshot)
+(global-set-key (kbd "C-<f5>") 'my/org-screenshot)
 #+end_src
 
 *** org-roam and org-roam-ui
@@ -1047,6 +1048,21 @@ context.  When called with an argument, unconditionally call
 #+END_SRC
 
 ** Functionality
+*** key-chord
+#+BEGIN_SRC emacs-lisp
+(require 'key-chord)
+
+(key-chord-define-global "BB" 'iswitchb)
+(key-chord-define-global "FF" 'find-file)
+(key-chord-define-global "jk" 'mode-line-other-buffer)
+(key-chord-define-global "HH" 'previous-buffer)
+(key-chord-define-global "LL" 'next-buffer)
+
+(key-chord-mode +1)
+#+END_SRC
+
+#+RESULTS:
+: t
 
 *** esup
 
@@ -1721,6 +1737,13 @@ https://github.com/syl20bnr/spacemacs/issues/10160
     )
   )
 
+(defun my/rust-compile-on-save()
+  (interactive)
+  (setq response-process-exec (process-exit-code-and-output
+                        "cargo" "run"))
+  (if (zerop (nth 0 response-process-exec))
+      (show-alert (nth 1 response-process-exec) nil "green")
+    (show-alert (nth 1 response-process-exec) nil "yellow")))
 
 (defun process-exit-code-and-output (program &rest args)
   "Run PROGRAM with ARGS and return the exit code and output in a list."
@@ -1740,7 +1763,19 @@ nothing happens."
         (add-hook 'after-save-hook 'my/compile-on-save nil t))
     (kill-local-variable 'after-save-hook)))
 
+(define-minor-mode rust-compile-on-save-mode
+  "Minor mode to automatically call `recompile' whenever the
+current buffer is saved. When there is ongoing compilation,
+nothing happens."
+  :lighter " CoS"
+  (if rust-compile-on-save-mode
+      (progn
+        (setq super-save-mode nil)
+        (add-hook 'after-save-hook 'my/rust-compile-on-save nil t))
+    (remove-hook 'after-save-hook 'my/rust-compile-on-save nil t)))
 #+END_SRC
+
+#+RESULTS:
 
 *** vterm
 (add-to-list 'load-path "c:\\opt\\emacs-libvterm\\")
@@ -1783,6 +1818,10 @@ https://dangirsh.org/projects/doom-config.html#rust
 (after! lsp-rust
   (setq lsp-rust-analyzer-cargo-watch-command "check"))
 
+(map! :after rust-mode
+      :map rust-mode-map
+      :nvi "<f5>" #'my/rust-compile-on-save
+      )
 (after! rustic
   (map! :map rustic-mode-map
         "M-j" #'lsp-ui-imenu
@@ -1876,6 +1915,10 @@ https://dangirsh.org/projects/doom-config.html#rust
   ;; (setq lsp-signature-auto-activate nil)
 
   ;; comment to disable rustfmt on save
+
+  (map! :leader
+        :desc "exec cargo run"
+        "r" #'rustic-cargo-run)
   (setq rustic-format-on-save t)
   (add-hook 'rustic-mode-hook 'rk/rustic-mode-hook))
 
@@ -1924,11 +1967,6 @@ https://dangirsh.org/projects/doom-config.html#rust
 (map! :leader
       :desc "New journal entry"
       "o W" #'my/pick-wiki-name)
-
-(map! :leader
-      :desc "New journal entry"
-      "o w" #'my/pick-work-projects-name)
-
 #+end_src
 
 
@@ -1967,9 +2005,15 @@ https://dangirsh.org/projects/doom-config.html#rust
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files "c:/my/work/work-projects"))))
+(defun my/open-work-project (work-proj-root-arg work-proj-name)
+  (if(file-directory-p work-proj-root-arg)
+      (progn
+        (delete-other-windows)
+        (find-file  (concat work-proj-root-arg "/" work-proj-name "/" work-proj-name "-index.org")))
+    (message "project not found %s" work-proj-root-arg)))
 
 (defun my/pick-work-projects-name-action (x)
-  (my/open-wiki "C:/my/work/work-projects" x))
+  (my/open-work-project "C:/my/work/work-projects" x))
 
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
@@ -1984,10 +2028,9 @@ https://dangirsh.org/projects/doom-config.html#rust
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
-         (title (read-from-minibuffer "Title: "))
          (date-stamp (format-time-string "%Y-%m-%d"))
-         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" project))
-         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase title)) ".org"))
+         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project))))
+         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))
@@ -1998,8 +2041,10 @@ https://dangirsh.org/projects/doom-config.html#rust
   (my/create-projects "c:/my/work/work-projects"))
 
 (map! :leader
-      :desc "New journal entry"
-      "<f2> c" #'my/create-projects-wrapper)
+      :desc "create or open projects"
+      "<f2> c" #'my/create-projects-wrapper
+      "<f2> o" #'my/pick-work-projects-name
+      )
 #+end_src
 
 #+RESULTS:
