@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jul 04, 2023 Tue"
+Last Saved: "Jul 12, 2023 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -81,6 +81,7 @@ Last Saved: "Jul 04, 2023 Tue"
   - [[#voidtools][Voidtools]]
   - [[#workflow-helpers][workflow helpers]]
     - [[#wiki][Wiki]]
+    - [[#open-current-folder-in-windows-explorer][open current folder in windows explorer]]
     - [[#create-trading-journal-entry][Create Trading Journal Entry]]
     - [[#zettlekasten][Zettlekasten]]
   - [[#file-operations][file operations]]
@@ -2128,6 +2129,17 @@ https://dangirsh.org/projects/doom-config.html#rust
 #+RESULTS:
 : my/pick-wiki-name
 
+*** open current folder in windows explorer
+#+BEGIN_SRC emacs-lisp
+(defun my/open-current-directory-in-explorer ()
+  "Open the current directory in Windows Explorer."
+  (interactive)
+
+  (shell-command (concat "start " (file-name-directory buffer-file-name))))
+
+(global-set-key (kbd "C-c o") 'my/open-current-directory-in-explorer)
+
+#+END_SRC
 *** Create Trading Journal Entry
 
 #+begin_src emacs-lisp

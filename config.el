@@ -1393,6 +1393,14 @@ nothing happens."
       "<f2> o" #'my/pick-work-projects-name
       )
 
+(defun my/open-current-directory-in-explorer ()
+  "Open the current directory in Windows Explorer."
+  (interactive)
+
+  (shell-command (concat "start " (file-name-directory buffer-file-name))))
+
+(global-set-key (kbd "C-c o") 'my/open-current-directory-in-explorer)
+
 (setq trading-wiki-root "c:/Users/gopinat/Dropbox/emacs-apps/wikis/trading-wiki/")
 (defun my/chartgallery/add-entry-to-index(it)
   (save-excursion
