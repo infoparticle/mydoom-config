@@ -73,6 +73,7 @@
 (package! org-roam-ui)
 (package! org-auto-tangle)
 (package! ob-ipython)
+(package! ob-mermaid)
 ;;(package! vterm)
 
 (package! pulsar)
@@ -106,7 +107,8 @@
 (package! paren-face)
 (package! aggressive-indent)
 (package! symex)
-(package! all-the-icons :disable t)
+;(package! all-the-icons :disable t)
+(package! all-the-icons)
 (package! speed-type)
 ;(package! multiple-cursors)
 (package! evil-mc)
@@ -134,3 +136,4 @@
 (package! esup :disable t)
 
 (package! helm-posframe)
+(package! centaur-tabs)
