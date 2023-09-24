@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jul 12, 2023 Wed"
+Last Saved: "Sep 11, 2023 Mon"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -1077,7 +1077,7 @@ context.  When called with an argument, unconditionally call
 
 *** scratch
 #+begin_src emacs-lisp
-(global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
+(global-set-key (kbd "<f2>")  (lambda()(interactive)(find-file "c:/my/emacs/start-page.org")))
 #+end_src
 *** GnuPG-gpg
 
@@ -1449,7 +1449,7 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
   ("C-<prior>" . centaur-tabs-backward)
   ("C-<next>" . centaur-tabs-forward)
   (:map evil-normal-state-map
-        ("g t" . centaur-tabs-forward)
+        ("g t" . centaur-tabs-counsel-switch-group)
         ("g T" . centaur-tabs-backward)))
 #+END_SRC
 
@@ -2481,7 +2481,9 @@ TODO: Should copy general package configs to simplify keybindings.
 
 #+begin_src emacs-lisp
 (with-system windows-nt
-  (cd "c:/my/tmp"))
+  (progn
+  (cd "c:/my/tmp")
+  (find-file "c:/my/emacs/start-page.org")))
 #+end_src
 
 #+RESULTS:

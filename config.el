@@ -645,7 +645,7 @@ context.  When called with an argument, unconditionally call
 
 (use-package! esup :ensure t)
 
-(global-set-key (kbd "<f2>")  (lambda()(interactive)(switch-to-buffer "*scratch*")))
+(global-set-key (kbd "<f2>")  (lambda()(interactive)(find-file "c:/my/emacs/start-page.org")))
 
 (with-system windows-nt
   (require 'epa-file)
@@ -922,7 +922,7 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
   ("C-<prior>" . centaur-tabs-backward)
   ("C-<next>" . centaur-tabs-forward)
   (:map evil-normal-state-map
-        ("g t" . centaur-tabs-forward)
+        ("g t" . centaur-tabs-counsel-switch-group)
         ("g T" . centaur-tabs-backward)))
 
 (after! helm
@@ -1673,4 +1673,6 @@ nothing happens."
       )
 
 (with-system windows-nt
-  (cd "c:/my/tmp"))
+  (progn
+  (cd "c:/my/tmp")
+  (find-file "c:/my/emacs/start-page.org")))
