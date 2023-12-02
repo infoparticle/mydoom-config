@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Sep 11, 2023 Mon"
+Last Saved: "Nov 01, 2023 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -54,7 +54,7 @@ Last Saved: "Sep 11, 2023 Mon"
     - [[#eshell][eshell]]
   - [[#ui-stuff][UI Stuff]]
     - [[#all-the-icons][all-the-icons]]
-    - [[#centaur-tab][centaur tab]]
+    - [[#centaur-tab---disabled][centaur tab - disabled]]
     - [[#beacon-not-used][beacon (not used)]]
     - [[#helm][helm]]
   - [[#project-management][Project Management]]
@@ -77,7 +77,7 @@ Last Saved: "Sep 11, 2023 Mon"
     - [[#rust-programming][rust programming]]
     - [[#lisp-programming][lisp programming]]
     - [[#rust-programming---rustic][rust programming - rustic]]
-    - [[#devdocs][devdocs]]
+    - [[#devdocs---disabled][devdocs - disabled]]
   - [[#voidtools][Voidtools]]
   - [[#workflow-helpers][workflow helpers]]
     - [[#wiki][Wiki]]
@@ -166,11 +166,21 @@ Get all fonts present
       tao-theme-use-boxes nil)
 (setq doom-theme 'doom-zenburn)
 
-
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 #+end_src
+
+#+RESULTS:
+: doom-zenburn
+(use-package! modus-themes
+  :ensure t
+  :config
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs nil)
+  (setq modus-themes-common-palette-overrides
+        modus-themes-preset-overrides-intense)
+  (load-theme 'modus-operandi-tinted))
 
 *** encoding for windows
 from: https://rufflewind.com/2014-07-20/pasting-unicode-in-emacs-on-windows
@@ -1383,11 +1393,10 @@ any directory proferred by `consult-dir'."
   :if (display-graphic-p))
 #+END_SRC
 
-*** centaur tab
+*** centaur tab - disabled
 
 https://github.com/ema2159/centaur-tabs
 
-#+BEGIN_SRC emacs-lisp
 (use-package! centaur-tabs
   :demand
   :config
@@ -1451,7 +1460,6 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
   (:map evil-normal-state-map
         ("g t" . centaur-tabs-counsel-switch-group)
         ("g T" . centaur-tabs-backward)))
-#+END_SRC
 
 *** beacon (not used)
 (use-package! beacon
@@ -1969,6 +1977,11 @@ https://dangirsh.org/projects/doom-config.html#rust
   :config
   (symex-initialize)
   (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
+(add-hook 'symex-mode-interface-hook
+          (lambda ()
+            (setq cursor-type 'bar) ; Set your desired cursor type here
+            (set-cursor-color "red")) ; Set your desired cursor color here
+          )
 #+end_src
 
 #+results:
@@ -2013,16 +2026,16 @@ https://dangirsh.org/projects/doom-config.html#rust
 #+results:
 : rk/rustic-mode-hook
 
-*** devdocs
-#+begin_src emacs-lisp
+*** devdocs - disabled
+
 (use-package! devdocs
   :config
   (add-hook 'python-mode-hook
           (lambda () (setq-local devdocs-current-docs '("python~3.10"))))
   )
-#+end_src
 
 ** Voidtools
+
 #+begin_src emacs-lisp
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
@@ -2059,8 +2072,8 @@ https://dangirsh.org/projects/doom-config.html#rust
 (defun my/open-wiki (wiki-root-arg wiki-name)
   (if(file-directory-p wiki-root-arg)
       (progn
-        ;(persp-mode t)
-        ;(persp-frame-switch wiki-name)
+                                        ;(persp-mode t)
+                                        ;(persp-frame-switch wiki-name)
         (delete-other-windows)
         (find-file  (concat wiki-root-arg "/" wiki-name "/contents/index.org"))
         (split-window-right 30)
@@ -2083,7 +2096,9 @@ https://dangirsh.org/projects/doom-config.html#rust
 
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                 (directory-files "c:/my/work/work-projects"))))
+                                 (directory-files "c:/my/work/work-projects")))
+  (sort wiki-list 'string>))
+
 (defun my/open-work-project (work-proj-root-arg work-proj-name)
   (if(file-directory-p work-proj-root-arg)
       (progn
@@ -2097,7 +2112,7 @@ https://dangirsh.org/projects/doom-config.html#rust
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
   (interactive)
-  (ivy-read "List of wikis: "  #'my/pick-work-projects-name-action-list-candidates
+  (ivy-read "List of projects: "  #'my/pick-work-projects-name-action-list-candidates
             :preselect (ivy-thing-at-point)
             :require-match t
             :action #'my/pick-work-projects-name-action
@@ -2107,8 +2122,12 @@ https://dangirsh.org/projects/doom-config.html#rust
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
+         (project_extension (completing-read "Directory Extension: " '("work-project" "team-mates" "simple-todo" "meetings")))
          (date-stamp (format-time-string "%Y-%m-%d"))
-         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project))))
+         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-"
+                              (replace-regexp-in-string "[^[:alnum:]]" "-"
+                                                        (downcase project))
+                              "." project_extension))
          (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)

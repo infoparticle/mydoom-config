@@ -49,7 +49,6 @@
       tao-theme-use-boxes nil)
 (setq doom-theme 'doom-zenburn)
 
-
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
@@ -861,70 +860,6 @@ context.  When called with an argument, unconditionally call
 (use-package! all-the-icons
   :if (display-graphic-p))
 
-(use-package! centaur-tabs
-  :demand
-  :config
-  (centaur-tabs-mode t)
-  (setq centaur-tabs-style "bar")
-  (setq centaur-tabs-set-close-button nil)
-  (setq centaur-tabs-set-icons t)
-  (setq centaur-tabs-label-fixed-length 16)
-  (setq centaur-tabs-gray-out-icons 'buffer)
-  ;;(setq centaur-tabs-set-bar 'over)
-  (setq centaur-tabs-set-bar 'left)
-  (centaur-tabs-group-by-projectile-project)
-  (defun centaur-tabs-buffer-groups ()
-    "`centaur-tabs-buffer-groups' control buffers' group rules.
-
-Group centaur-tabs with mode if buffer is derived from `eshell-mode' `emacs-lisp-mode' `dired-mode' `org-mode' `magit-mode'.
-All buffer name start with * will group to \"Emacs\".
-Other buffer group by `centaur-tabs-get-group-name' with project name."
-    (list
-     (cond
-      ((or (string-equal "*" (substring (buffer-name) 0 1))
-           (memq major-mode '(magit-process-mode
-                              magit-status-mode
-                              magit-diff-mode
-                              magit-log-mode
-                              magit-file-mode
-                              magit-blob-mode
-                              magit-blame-mode
-                              )))
-       "Emacs")
-      ((derived-mode-p 'prog-mode)
-       "Editing")
-      ((derived-mode-p 'dired-mode)
-       "Dired")
-      ((memq major-mode '(helpful-mode
-                          help-mode))
-       "Help")
-      ((memq major-mode '(org-mode
-                          org-agenda-clockreport-mode
-                          org-src-mode
-                          org-agenda-mode
-                          org-beamer-mode
-                          org-indent-mode
-                          org-bullets-mode
-                          org-cdlatex-mode
-                          org-agenda-log-mode
-                          diary-mode))
-       "OrgMode")
-      (t
-       (centaur-tabs-get-group-name (current-buffer))))))
-  :hook
-  (dired-mode . centaur-tabs-local-mode)
-  (dashboard-mode . centaur-tabs-local-mode)
-  (term-mode . centaur-tabs-local-mode)
-  (calendar-mode . centaur-tabs-local-mode)
-  (org-agenda-mode . centaur-tabs-local-mode)
-
-  :bind
-  ("C-<prior>" . centaur-tabs-backward)
-  ("C-<next>" . centaur-tabs-forward)
-  (:map evil-normal-state-map
-        ("g t" . centaur-tabs-counsel-switch-group)
-        ("g T" . centaur-tabs-backward)))
-
 (after! helm
   (setq helm-echo-input-in-header-line t)
   (helm-posframe-enable))
@@ -1261,6 +1196,11 @@ nothing happens."
   :config
   (symex-initialize)
   (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
+(add-hook 'symex-mode-interface-hook
+          (lambda ()
+            (setq cursor-type 'bar) ; Set your desired cursor type here
+            (set-cursor-color "red")) ; Set your desired cursor color here
+          )
 
 (use-package! rustic
   :bind (:map rustic-mode-map
@@ -1294,12 +1234,6 @@ nothing happens."
   (when buffer-file-name
     (setq-local buffer-save-without-query t)))
 
-(use-package! devdocs
-  :config
-  (add-hook 'python-mode-hook
-          (lambda () (setq-local devdocs-current-docs '("python~3.10"))))
-  )
-
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
@@ -1327,8 +1261,8 @@ nothing happens."
 (defun my/open-wiki (wiki-root-arg wiki-name)
   (if(file-directory-p wiki-root-arg)
       (progn
-        ;(persp-mode t)
-        ;(persp-frame-switch wiki-name)
+                                        ;(persp-mode t)
+                                        ;(persp-frame-switch wiki-name)
         (delete-other-windows)
         (find-file  (concat wiki-root-arg "/" wiki-name "/contents/index.org"))
         (split-window-right 30)
@@ -1351,7 +1285,9 @@ nothing happens."
 
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                 (directory-files "c:/my/work/work-projects"))))
+                                 (directory-files "c:/my/work/work-projects")))
+  (sort wiki-list 'string>))
+
 (defun my/open-work-project (work-proj-root-arg work-proj-name)
   (if(file-directory-p work-proj-root-arg)
       (progn
@@ -1365,7 +1301,7 @@ nothing happens."
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
   (interactive)
-  (ivy-read "List of wikis: "  #'my/pick-work-projects-name-action-list-candidates
+  (ivy-read "List of projects: "  #'my/pick-work-projects-name-action-list-candidates
             :preselect (ivy-thing-at-point)
             :require-match t
             :action #'my/pick-work-projects-name-action
@@ -1375,8 +1311,12 @@ nothing happens."
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
+         (project_extension (completing-read "Directory Extension: " '("work-project" "team-mates" "simple-todo" "meetings")))
          (date-stamp (format-time-string "%Y-%m-%d"))
-         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project))))
+         (project-dir (concat (file-name-as-directory root-dir) date-stamp "-"
+                              (replace-regexp-in-string "[^[:alnum:]]" "-"
+                                                        (downcase project))
+                              "." project_extension))
          (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)

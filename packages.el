@@ -124,9 +124,9 @@
 (package! ob-restclient)
 (package! ob-powershell)
 (package! haskell-mode)
-(package! devdocs)
-(package! tao-theme)
-(package! almost-mono-themes)
+;(package! devdocs)
+;(package! tao-theme)
+;(package! almost-mono-themes)
 
 
 (package! emacsql)
@@ -136,4 +136,5 @@
 (package! esup :disable t)
 
 (package! helm-posframe)
-(package! centaur-tabs)
+;(package! centaur-tabs)
+;(package! modus-themes)
