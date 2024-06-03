@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Nov 01, 2023 Wed"
+Last Saved: "Jun 02, 2024 Sun"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -15,6 +15,7 @@ Last Saved: "Nov 01, 2023 Wed"
     - [[#others][Others]]
       - [[#calendar-add-weeks][Calendar add weeks]]
   - [[#org-mode][Org mode]]
+    - [[#anki-editor][anki-editor]]
     - [[#time-stamp-and-basic-org-defaults][Time Stamp and basic org defaults]]
     - [[#org-formatter][org formatter]]
     - [[#org-babel][Org babel]]
@@ -38,6 +39,7 @@ Last Saved: "Nov 01, 2023 Wed"
     - [[#spell-check][spell check]]
     - [[#split-org-src-block][split org-src-block]]
   - [[#functionality][Functionality]]
+    - [[#github-copilot][github copilot]]
     - [[#key-chord][key-chord]]
     - [[#esup][esup]]
     - [[#scratch][scratch]]
@@ -52,17 +54,18 @@ Last Saved: "Nov 01, 2023 Wed"
     - [[#speed-type][speed-type]]
     - [[#multiple-cursors][multiple-cursors]]
     - [[#eshell][eshell]]
+    - [[#hyperbole][hyperbole]]
   - [[#ui-stuff][UI Stuff]]
     - [[#all-the-icons][all-the-icons]]
     - [[#centaur-tab---disabled][centaur tab - disabled]]
-    - [[#beacon-not-used][beacon (not used)]]
-    - [[#helm][helm]]
+    - [[#beacon---notused][beacon - NotUsed]]
+    - [[#helm---notused][helm - NotUsed]]
   - [[#project-management][Project Management]]
     - [[#skeltor][skeltor]]
   - [[#coding--programming][coding / Programming]]
     - [[#iedit][iedit]]
     - [[#company][company]]
-    - [[#gist-managment][gist managment]]
+    - [[#gist-managment---notused][gist managment - NotUsed]]
     - [[#highlight-symbols][highlight symbols]]
     - [[#managing-info-files][Managing info files]]
     - [[#yas-snippet][yas-snippet]]
@@ -144,13 +147,14 @@ Get all fonts present
   ;;
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
-  ;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
+  (setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
-  (setq myfont "Iosevka"  myfontsize 20)
-  (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 18))
+  ;;(setq myfont "Iosevka"  myfontsize 20)
+   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
+         doom-variable-pitch-font (font-spec :family "sans" :size 20)
+         doom-unicode-font (font-spec :family "symbola" :size 20))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
-  ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
+  ;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
 
   ;; There are two ways to load a theme. Both assume the theme is installed and
@@ -184,9 +188,14 @@ Get all fonts present
 
 *** encoding for windows
 from: https://rufflewind.com/2014-07-20/pasting-unicode-in-emacs-on-windows
-#+begin_src emacs-lisp
 (with-system windows-nt
   (set-selection-coding-system 'utf-16-le))
+#+begin_src emacs-lisp
+(with-system windows-nt
+  (set-selection-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-language-environment "UTF-8")
+  )
 #+end_src
 
 
@@ -258,6 +267,45 @@ from: https://rufflewind.com/2014-07-20/pasting-unicode-in-emacs-on-windows
 #+RESULTS:
 
 ** Org mode
+*** anki-editor
+
+#+BEGIN_SRC emacs-lisp
+(use-package! anki-editor
+  :after org
+  :bind (:map org-mode-map
+              ("<f10>" . anki-editor-cloze-region-auto-incr)
+              ("<f9>" . anki-editor-cloze-region-dont-incr)
+              ("<f8>" . anki-editor-reset-cloze-number)
+              ("<f7>"  . anki-editor-push-tree))
+  :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
+  :config
+  (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
+        anki-editor-org-tags-as-anki-tags t)
+
+  (defun anki-editor-cloze-region-auto-incr (&optional arg)
+    "Cloze region without hint and increase card number."
+    (interactive)
+    (anki-editor-cloze-region my-anki-editor-cloze-number "")
+    (setq my-anki-editor-cloze-number (1+ my-anki-editor-cloze-number))
+    (forward-sexp))
+  (defun anki-editor-cloze-region-dont-incr (&optional arg)
+    "Cloze region without hint using the previous card number."
+    (interactive)
+    (anki-editor-cloze-region (1- my-anki-editor-cloze-number) "")
+    (forward-sexp))
+  (defun anki-editor-reset-cloze-number (&optional arg)
+    "Reset cloze number to ARG or 1"
+    (interactive)
+    (setq my-anki-editor-cloze-number (or arg 1)))
+  (defun anki-editor-push-tree ()
+    "Push all notes under a tree."
+    (interactive)
+    (anki-editor-push-notes '(4))
+    (anki-editor-reset-cloze-number))
+  ;; Initialize
+  (anki-editor-reset-cloze-number)
+  )
+#+END_SRC
 
 *** Time Stamp and basic org defaults
 
@@ -1063,6 +1111,33 @@ context.  When called with an argument, unconditionally call
 #+END_SRC
 
 ** Functionality
+
+*** github copilot
+
+#+BEGIN_SRC emacs-lisp
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word)))
+
+(after! (evil copilot)
+  ;; Define the custom function that either accepts the completion or does the default behavior
+  (defun my/copilot-tab-or-default ()
+    (interactive)
+    (if (and (bound-and-true-p copilot-mode)
+             ;; Add any other conditions to check for active copilot suggestions if necessary
+             )
+        (copilot-accept-completion)
+      (evil-insert 1))) ; Default action to insert a tab. Adjust as needed.
+
+  ;; Bind the custom function to <tab> in Evil's insert state
+  (evil-define-key 'insert 'global (kbd "C-<tab>") 'my/copilot-tab-or-default))
+#+END_SRC
+
 *** key-chord
 #+BEGIN_SRC emacs-lisp
 (require 'key-chord)
@@ -1119,6 +1194,20 @@ context.  When called with an argument, unconditionally call
     (ad-disable-advice 'epg--start 'around 'advice-epg-disable-agent)
     (ad-activate 'epg--start)
     (message "EasyPG gpg-agent re-enabled")))
+
+(defun my/insert-gpg-header ()
+  "Insert a header for .gpg files if it's not already present."
+  (when (and (buffer-file-name)
+             (string-match-p "\\.gpg\\'" (buffer-file-name)))
+    (save-excursion
+      (goto-char (point-min))
+      (unless (re-search-forward "-\\*- epa-file-encrypt-to:" nil t)
+        (goto-char (point-min))
+        (insert "; -*- epa-file-encrypt-to: (\"DailyKey@localhost\") -*-\n\n\n")
+        (normal-mode)))))
+
+(add-hook 'find-file-hook 'my/insert-gpg-header)
+
 #+end_src
 *** server
 
@@ -1381,6 +1470,11 @@ any directory proferred by `consult-dir'."
               (company-mode 1))))
 
 
+
+*** hyperbole
+#+BEGIN_SRC emacs-lisp
+(use-package! hyperbole)
+#+END_SRC
 ** UI Stuff
 #+begin_src emacs-lisp
 ;(doom-themes-neotree-config)
@@ -1461,7 +1555,8 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
         ("g t" . centaur-tabs-counsel-switch-group)
         ("g T" . centaur-tabs-backward)))
 
-*** beacon (not used)
+*** beacon - NotUsed
+
 (use-package! beacon
   :defer 3
   :config
@@ -1482,13 +1577,11 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
 (hl-line-overlay-priority -100) ;; sadly, seems not observed by diredfl
 )
 
-*** helm
+*** helm - NotUsed
 
-#+BEGIN_SRC emacs-lisp
 (after! helm
   (setq helm-echo-input-in-header-line t)
   (helm-posframe-enable))
-#+END_SRC
 
 ** Project Management
 
@@ -1583,8 +1676,8 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
 (use-package! company-box
   :hook (company-mode . company-box-mode))
 
-*** gist managment
-#+begin_src emacs-lisp
+*** gist managment - NotUsed
+
 (defun my/get-gist (filepath)
   (interactive)
   (find-file filepath)
@@ -1606,7 +1699,6 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
   (interactive)
   (my/get-gist "~/emacstools/code-gists/code-gists.python.org")
   )
-#+end_src
 
 *** highlight symbols
 #+begin_src emacs-lisp
@@ -1795,20 +1887,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
     (switch-to-buffer buffer)))
 *** java - compile on save
 
-#+BEGIN_SRC emacs-lisp
-(defun show-alert (output-message background-color foreground-color)
-  (when (posframe-workable-p)
-    (posframe-show "*my-posframe-build-output-buffer*"
-                   :poshandler #'posframe-poshandler-frame-top-right-corner
-                   :string (concat (format-time-string "\n[%Y-%m-%d %H:%M:%S]\n\n") output-message "\n")
-                   :timeout 10
-                   :right-fringe 10
-                   :left-fringe 10
-                   :border-width 1
-                   :border-color foreground-color
-                   :background-color background-color
-                   :foreground-color foreground-color)))
-
+;; sample code
 (defun my/compile-on-save()
   (setq response-javac (process-exit-code-and-output "javac" (file-name-nondirectory (buffer-file-name))))
   (if (zerop (nth 0 response-javac))
@@ -1824,6 +1903,7 @@ https://github.com/syl20bnr/spacemacs/issues/10160
     )
   )
 
+
 (defun my/rust-compile-on-save()
   (interactive)
   (setq response-process-exec (process-exit-code-and-output
@@ -1831,12 +1911,6 @@ https://github.com/syl20bnr/spacemacs/issues/10160
   (if (zerop (nth 0 response-process-exec))
       (show-alert (nth 1 response-process-exec) nil "green")
     (show-alert (nth 1 response-process-exec) nil "yellow")))
-
-(defun process-exit-code-and-output (program &rest args)
-  "Run PROGRAM with ARGS and return the exit code and output in a list."
-  (with-temp-buffer
-    (list (apply 'call-process program nil (current-buffer) nil args)
-          (buffer-string))))
 
 (define-minor-mode java-compile-on-save-mode
   "Minor mode to automatically call `recompile' whenever the
@@ -1860,9 +1934,67 @@ nothing happens."
         (setq super-save-mode nil)
         (add-hook 'after-save-hook 'my/rust-compile-on-save nil t))
     (remove-hook 'after-save-hook 'my/rust-compile-on-save nil t)))
+
+
+#+BEGIN_SRC emacs-lisp
+(defun show-alert (output-message background-color foreground-color)
+  (when (posframe-workable-p)
+    (posframe-show "*make-output*"
+                   :poshandler #'posframe-poshandler-frame-bottom-right-corner
+                                        ;:string (concat (format-time-string "\n[%Y-%m-%d %H:%M:%S]\n\n") output-message "\n")
+                   :string (concat output-message)
+                   :timeout 20
+                   :right-fringe 10
+                   :left-fringe 10
+                   :border-width 1
+                   :border-color foreground-color
+                   :background-color background-color
+                   :foreground-color foreground-color)))
+
+;; (defun process-exit-code-and-output (program &rest args)
+;;   "Run PROGRAM with ARGS and return the exit code and output in a list."
+;;   (with-temp-buffer
+;;     (list (apply 'call-process program nil (current-buffer) nil args)
+;;           (buffer-string))))
+
+(defun process-exit-code-and-output (program &rest args)
+  "Run PROGRAM with ARGS and return the exit code and output in a list."
+  (let* ((buffer "*Make Output Tmp*")
+         (process (apply 'start-process "procname" buffer program args)))
+    (set-process-sentinel
+     process
+     (lambda (process event)
+       (when (eq (process-status process) 'exit)
+         (let* ((exit-code (process-exit-status process))
+                (output (with-current-buffer "*Make Output Tmp*" (buffer-string)))
+                (alert-color (if (zerop exit-code) "green" "yellow")))
+           (kill-buffer "*Make Output Tmp*")
+           (show-alert output nil alert-color)))))))
+
+(defun my/run-make-on-save()
+  (interactive)
+  (show-alert "running..." nil "pink")
+  (process-exit-code-and-output "make" "run" "--quiet"))
+
+(defun my/delete-all-posframes ()
+  (interactive)
+  (posframe-delete-all))
+(define-minor-mode  run-make-on-save-mode
+  "Minor mode to automatically call `make run' whenever the
+current buffer is saved."
+  :lighter " MoS"
+  (if run-make-on-save-mode
+      (progn
+        (setq super-save-mode nil)
+        (save-buffer)
+        (global-set-key (kbd "C-c m") 'my/run-make-on-save)
+        (global-set-key (kbd "C-c l") 'my/delete-all-posframes)
+        (add-hook 'after-save-hook 'my/run-make-on-save nil t))
+    (remove-hook 'after-save-hook 'my/run-make-on-save nil t)))
 #+END_SRC
 
 #+RESULTS:
+
 
 *** vterm
 (add-to-list 'load-path "c:\\opt\\emacs-libvterm\\")
@@ -1985,7 +2117,7 @@ https://dangirsh.org/projects/doom-config.html#rust
 #+end_src
 
 #+results:
-: sly
+| lambda | nil | (setq cursor-type 'bar) | (set-cursor-color red) |
 
 *** rust programming - rustic
 
@@ -2046,7 +2178,7 @@ https://dangirsh.org/projects/doom-config.html#rust
               (counsel--elisp-to-pcre
                (ivy--regex input t)))))
   ;;https://github.com/abo-abo/swiper/issues/1218
-  (setq ivy-dynamic-exhibit-delay-ms 500)
+  (setq ivy-dynamic-exhibit-delay-ms 1000)
   (map! :leader
         :desc "voidtools everything search"
         "s f" #'counsel-locate))
@@ -2128,7 +2260,7 @@ https://dangirsh.org/projects/doom-config.html#rust
                               (replace-regexp-in-string "[^[:alnum:]]" "-"
                                                         (downcase project))
                               "." project_extension))
-         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
+         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "." project_extension "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))

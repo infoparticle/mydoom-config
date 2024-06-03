@@ -131,10 +131,19 @@
 
 (package! emacsql)
 (package! emacsql-sqlite)
-(package! hyperbole :disable t)
+;;(package! hyperbole :disable t)
+(package! hyperbole)
 
 (package! esup :disable t)
 
-(package! helm-posframe)
+;(package! helm-posframe)
 ;(package! centaur-tabs)
 ;(package! modus-themes)
+
+;; chatGPT!!
+;; (package! gptel)
+
+(package! anki-editor)
+
+(package! copilot
+  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el" "dist")))

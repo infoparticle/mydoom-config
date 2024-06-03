@@ -27,13 +27,14 @@
   ;;
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
-  ;(setq myfont "JetBrainsMonoMedium NF"  myfontsize 16)
+  (setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
-  (setq myfont "Iosevka"  myfontsize 20)
-  (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 18))
+  ;;(setq myfont "Iosevka"  myfontsize 20)
+   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
+         doom-variable-pitch-font (font-spec :family "sans" :size 20)
+         doom-unicode-font (font-spec :family "symbola" :size 20))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
-  ;;       doom-variable-pitch-font (font-spec :family "sans" :size 13))
+  ;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
 
   ;; There are two ways to load a theme. Both assume the theme is installed and
@@ -54,7 +55,10 @@
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 
 (with-system windows-nt
-  (set-selection-coding-system 'utf-16-le))
+  (set-selection-coding-system 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-language-environment "UTF-8")
+  )
 
 (setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
@@ -112,6 +116,42 @@
 
 (set-face-attribute 'calendar-iso-week-face nil
                     :height 1.0 :foreground "salmon")
+
+(use-package! anki-editor
+  :after org
+  :bind (:map org-mode-map
+              ("<f10>" . anki-editor-cloze-region-auto-incr)
+              ("<f9>" . anki-editor-cloze-region-dont-incr)
+              ("<f8>" . anki-editor-reset-cloze-number)
+              ("<f7>"  . anki-editor-push-tree))
+  :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
+  :config
+  (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
+        anki-editor-org-tags-as-anki-tags t)
+
+  (defun anki-editor-cloze-region-auto-incr (&optional arg)
+    "Cloze region without hint and increase card number."
+    (interactive)
+    (anki-editor-cloze-region my-anki-editor-cloze-number "")
+    (setq my-anki-editor-cloze-number (1+ my-anki-editor-cloze-number))
+    (forward-sexp))
+  (defun anki-editor-cloze-region-dont-incr (&optional arg)
+    "Cloze region without hint using the previous card number."
+    (interactive)
+    (anki-editor-cloze-region (1- my-anki-editor-cloze-number) "")
+    (forward-sexp))
+  (defun anki-editor-reset-cloze-number (&optional arg)
+    "Reset cloze number to ARG or 1"
+    (interactive)
+    (setq my-anki-editor-cloze-number (or arg 1)))
+  (defun anki-editor-push-tree ()
+    "Push all notes under a tree."
+    (interactive)
+    (anki-editor-push-notes '(4))
+    (anki-editor-reset-cloze-number))
+  ;; Initialize
+  (anki-editor-reset-cloze-number)
+  )
 
 (setq
 time-stamp-active t          ; do enable time-stamps
@@ -632,6 +672,28 @@ context.  When called with an argument, unconditionally call
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
 
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word)))
+
+(after! (evil copilot)
+  ;; Define the custom function that either accepts the completion or does the default behavior
+  (defun my/copilot-tab-or-default ()
+    (interactive)
+    (if (and (bound-and-true-p copilot-mode)
+             ;; Add any other conditions to check for active copilot suggestions if necessary
+             )
+        (copilot-accept-completion)
+      (evil-insert 1))) ; Default action to insert a tab. Adjust as needed.
+
+  ;; Bind the custom function to <tab> in Evil's insert state
+  (evil-define-key 'insert 'global (kbd "C-<tab>") 'my/copilot-tab-or-default))
+
 (require 'key-chord)
 
 (key-chord-define-global "BB" 'iswitchb)
@@ -673,6 +735,19 @@ context.  When called with an argument, unconditionally call
     (ad-disable-advice 'epg--start 'around 'advice-epg-disable-agent)
     (ad-activate 'epg--start)
     (message "EasyPG gpg-agent re-enabled")))
+
+(defun my/insert-gpg-header ()
+  "Insert a header for .gpg files if it's not already present."
+  (when (and (buffer-file-name)
+             (string-match-p "\\.gpg\\'" (buffer-file-name)))
+    (save-excursion
+      (goto-char (point-min))
+      (unless (re-search-forward "-\\*- epa-file-encrypt-to:" nil t)
+        (goto-char (point-min))
+        (insert "; -*- epa-file-encrypt-to: (\"DailyKey@localhost\") -*-\n\n\n")
+        (normal-mode)))))
+
+(add-hook 'find-file-hook 'my/insert-gpg-header)
 
 (use-package! popper
   :bind (("C-\\"   . popper-toggle-latest)
@@ -854,15 +929,13 @@ context.  When called with an argument, unconditionally call
 
 (use-package! evil-mc)
 
+(use-package! hyperbole)
+
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
 (use-package! all-the-icons
   :if (display-graphic-p))
-
-(after! helm
-  (setq helm-echo-input-in-header-line t)
-  (helm-posframe-enable))
 
 (with-eval-after-load 'projectile
   (with-system windows-nt
@@ -905,28 +978,6 @@ context.  When called with an argument, unconditionally call
           ".clangd")))
 
 (global-set-key (kbd "C-M-i") 'iedit-mode)
-
-(defun my/get-gist (filepath)
-  (interactive)
-  (find-file filepath)
-  (counsel-org-goto)
-  (search-forward "#+begin_src")
-  (org-edit-src-code)
-  (clipboard-kill-region (point-min) (point-max))
-  (org-edit-src-abort)
-  ;(kill-buffer)
-  (previous-buffer)
-  (yank))
-
-(defun my/get-gist-all()
-  (interactive)
-  (my/get-gist "~/emacstools/code-gists/code-gists-all.org")
-  )
-
-(defun my/get-gist-python()
-  (interactive)
-  (my/get-gist "~/emacstools/code-gists/code-gists.python.org")
-  )
 
  (use-package! highlight-symbol
         :defer 10
@@ -1066,10 +1117,11 @@ context.  When called with an argument, unconditionally call
 
 (defun show-alert (output-message background-color foreground-color)
   (when (posframe-workable-p)
-    (posframe-show "*my-posframe-build-output-buffer*"
-                   :poshandler #'posframe-poshandler-frame-top-right-corner
-                   :string (concat (format-time-string "\n[%Y-%m-%d %H:%M:%S]\n\n") output-message "\n")
-                   :timeout 10
+    (posframe-show "*make-output*"
+                   :poshandler #'posframe-poshandler-frame-bottom-right-corner
+                                        ;:string (concat (format-time-string "\n[%Y-%m-%d %H:%M:%S]\n\n") output-message "\n")
+                   :string (concat output-message)
+                   :timeout 20
                    :right-fringe 10
                    :left-fringe 10
                    :border-width 1
@@ -1077,57 +1129,46 @@ context.  When called with an argument, unconditionally call
                    :background-color background-color
                    :foreground-color foreground-color)))
 
-(defun my/compile-on-save()
-  (setq response-javac (process-exit-code-and-output "javac" (file-name-nondirectory (buffer-file-name))))
-  (if (zerop (nth 0 response-javac))
-      (progn
-        (setq response-java
-              (process-exit-code-and-output
-               "java"
-               "-cp"
-               "."
-               (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))))
-        (show-alert (nth 1 response-java) nil "green"))
-    (show-alert (nth 1 response-javac) nil "yellow")
-    )
-  )
-
-(defun my/rust-compile-on-save()
-  (interactive)
-  (setq response-process-exec (process-exit-code-and-output
-                        "cargo" "run"))
-  (if (zerop (nth 0 response-process-exec))
-      (show-alert (nth 1 response-process-exec) nil "green")
-    (show-alert (nth 1 response-process-exec) nil "yellow")))
+;; (defun process-exit-code-and-output (program &rest args)
+;;   "Run PROGRAM with ARGS and return the exit code and output in a list."
+;;   (with-temp-buffer
+;;     (list (apply 'call-process program nil (current-buffer) nil args)
+;;           (buffer-string))))
 
 (defun process-exit-code-and-output (program &rest args)
   "Run PROGRAM with ARGS and return the exit code and output in a list."
-  (with-temp-buffer
-    (list (apply 'call-process program nil (current-buffer) nil args)
-          (buffer-string))))
+  (let* ((buffer "*Make Output Tmp*")
+         (process (apply 'start-process "procname" buffer program args)))
+    (set-process-sentinel
+     process
+     (lambda (process event)
+       (when (eq (process-status process) 'exit)
+         (let* ((exit-code (process-exit-status process))
+                (output (with-current-buffer "*Make Output Tmp*" (buffer-string)))
+                (alert-color (if (zerop exit-code) "green" "yellow")))
+           (kill-buffer "*Make Output Tmp*")
+           (show-alert output nil alert-color)))))))
 
-(define-minor-mode java-compile-on-save-mode
-  "Minor mode to automatically call `recompile' whenever the
-current buffer is saved. When there is ongoing compilation,
-nothing happens."
-  :lighter " CoS"
-  (if java-compile-on-save-mode
+(defun my/run-make-on-save()
+  (interactive)
+  (show-alert "running..." nil "pink")
+  (process-exit-code-and-output "make" "run" "--quiet"))
+
+(defun my/delete-all-posframes ()
+  (interactive)
+  (posframe-delete-all))
+(define-minor-mode  run-make-on-save-mode
+  "Minor mode to automatically call `make run' whenever the
+current buffer is saved."
+  :lighter " MoS"
+  (if run-make-on-save-mode
       (progn
         (setq super-save-mode nil)
-        (make-local-variable 'after-save-hook)
-        (add-hook 'after-save-hook 'my/compile-on-save nil t))
-    (kill-local-variable 'after-save-hook)))
-
-(define-minor-mode rust-compile-on-save-mode
-  "Minor mode to automatically call `recompile' whenever the
-current buffer is saved. When there is ongoing compilation,
-nothing happens."
-  :lighter " CoS"
-  (if rust-compile-on-save-mode
-      (progn
-        (setq super-save-mode nil)
-        (add-hook 'after-save-hook 'my/rust-compile-on-save nil t))
-    (remove-hook 'after-save-hook 'my/rust-compile-on-save nil t)))
+        (save-buffer)
+        (global-set-key (kbd "C-c m") 'my/run-make-on-save)
+        (global-set-key (kbd "C-c l") 'my/delete-all-posframes)
+        (add-hook 'after-save-hook 'my/run-make-on-save nil t))
+    (remove-hook 'after-save-hook 'my/run-make-on-save nil t)))
 
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
 
@@ -1243,7 +1284,7 @@ nothing happens."
               (counsel--elisp-to-pcre
                (ivy--regex input t)))))
   ;;https://github.com/abo-abo/swiper/issues/1218
-  (setq ivy-dynamic-exhibit-delay-ms 500)
+  (setq ivy-dynamic-exhibit-delay-ms 1000)
   (map! :leader
         :desc "voidtools everything search"
         "s f" #'counsel-locate))
@@ -1317,7 +1358,7 @@ nothing happens."
                               (replace-regexp-in-string "[^[:alnum:]]" "-"
                                                         (downcase project))
                               "." project_extension))
-         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "-index.org"))
+         (file-name (concat date-stamp "-" (replace-regexp-in-string "[^[:alnum:]]" "-" (downcase project)) "." project_extension "-index.org"))
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))
