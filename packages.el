@@ -74,7 +74,7 @@
   :recipe (:host github :repo "skeeto/emacsql"))
  
 (package! org-roam-ui)
-(package! org-attach)
+;;(package! org-attach)
 (package! org-auto-tangle)
 (package! ob-ipython)
 (package! ob-mermaid)
