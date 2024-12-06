@@ -82,7 +82,8 @@
 (package! popper)
 
 ;; ~/.doom.d/package.el
-(package! org-transclusion :disable t)
+(package! org-transclusion)
+;(package! org-download)
 (package! org-appear :disable t)
 
 ;;(package! ob-napkin)

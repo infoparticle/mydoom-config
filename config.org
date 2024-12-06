@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jul 10, 2024 Wed"
+Last Saved: "Dec 06, 2024 Fri"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -838,32 +838,26 @@ a separator ' -> '."
 
 *** org-roam and org-roam-ui
 #+BEGIN_SRC emacs-lisp
+
 (after! org-roam
-  (setq org-roam-directory (file-truename "c:/my/org-roam"))
+  ;; 2024-12-06 Fri
+  (setq org-roam-farm-path "c:/my/org-farm/")
 
-  (setq org-roam-root "c:/my/org-roam/root/")
-
-  (defun my/get-roam-dir-name-action-list-candidates (str pred _)
-    (setq roam-dir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                       (directory-files org-roam-root))))
-
-  (defun my/set-roam-dir-name-action (x)
-    (setq org-roam-directory  (concat org-roam-root x))
-    (org-roam-db-sync)
-    )
-
-  (defun my/set-org-roam-directory ()
-    "pick a wiki from dropbox folder."
+  ;; Function to Switch Org Roam Repository
+  (defun org-roam-switch-repo ()
+    "Prompt to switch between Org Roam repositories in the farm."
     (interactive)
-    (ivy-read "List of wikis: "  #'my/get-roam-dir-name-action-list-candidates
-              :preselect (ivy-thing-at-point)
-              :require-match t
-              :action #'my/set-roam-dir-name-action
-              :caller 'my/get-roam-dir-name))
+    (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
+           (selected-repo (completing-read "Select Org Roam Repo: " repos)))
+      (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
+      (org-roam-db-sync)
+      (message "Switched to Org Roam Repo: %s" selected-repo)))
+
   (map! :leader
         :desc "set org-roam directory"
-        "n r ." #'my/set-org-roam-directory)
+        "m m s" #'my/set-org-roam-directory)
   )
+
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp :tangle no
@@ -908,7 +902,7 @@ a separator ' -> '."
 
 *** org-transclusion
 
-#+begin_example
+#+BEGIN_SRC emacs-lisp
 ;; ~/.doom.d/config.el
 (use-package! org-transclusion
   :after org
@@ -918,7 +912,8 @@ a separator ' -> '."
    :leader
    :prefix "n"
    :desc "Org Transclusion Mode" "t" #'org-transclusion-mode))
-#+end_example
+#+END_SRC
+
 *** org-reveal
 
 #+begin_src emacs-lisp
@@ -1132,6 +1127,7 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 (setq denote-excluded-directories-regexp nil)
 (setq denote-excluded-keywords-regexp nil)
 (setq denote-rename-confirmations '(rewrite-front-matter modify-file-name))
+(setq denote-date-format "%y%m%d")
 
 ;; Pick dates, where relevant, with Org's advanced interface:
 (setq denote-date-prompt-use-org-read-date t)

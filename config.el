@@ -486,31 +486,33 @@ a separator ' -> '."
 (global-set-key (kbd "C-<f5>") 'my/org-screenshot)
 
 (after! org-roam
-  (setq org-roam-directory (file-truename "c:/my/org-roam"))
+  ;; 2024-12-06 Fri
+  (setq org-roam-farm-path "c:/my/org-farm/")
 
-  (setq org-roam-root "c:/my/org-roam/root/")
-
-  (defun my/get-roam-dir-name-action-list-candidates (str pred _)
-    (setq roam-dir-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                       (directory-files org-roam-root))))
-
-  (defun my/set-roam-dir-name-action (x)
-    (setq org-roam-directory  (concat org-roam-root x))
-    (org-roam-db-sync)
-    )
-
-  (defun my/set-org-roam-directory ()
-    "pick a wiki from dropbox folder."
+  ;; Function to Switch Org Roam Repository
+  (defun org-roam-switch-repo ()
+    "Prompt to switch between Org Roam repositories in the farm."
     (interactive)
-    (ivy-read "List of wikis: "  #'my/get-roam-dir-name-action-list-candidates
-              :preselect (ivy-thing-at-point)
-              :require-match t
-              :action #'my/set-roam-dir-name-action
-              :caller 'my/get-roam-dir-name))
+    (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
+           (selected-repo (completing-read "Select Org Roam Repo: " repos)))
+      (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
+      (org-roam-db-sync)
+      (message "Switched to Org Roam Repo: %s" selected-repo)))
+
   (map! :leader
         :desc "set org-roam directory"
-        "n r ." #'my/set-org-roam-directory)
+        "m m s" #'my/set-org-roam-directory)
   )
+
+;; ~/.doom.d/config.el
+(use-package! org-transclusion
+  :after org
+  :init
+  (map!
+   :map global-map "<f12>" #'org-transclusion-add
+   :leader
+   :prefix "n"
+   :desc "Org Transclusion Mode" "t" #'org-transclusion-mode))
 
 (use-package! ox-reveal)
 
@@ -685,6 +687,7 @@ context.  When called with an argument, unconditionally call
 (setq denote-excluded-directories-regexp nil)
 (setq denote-excluded-keywords-regexp nil)
 (setq denote-rename-confirmations '(rewrite-front-matter modify-file-name))
+(setq denote-date-format "%y%m%d")
 
 ;; Pick dates, where relevant, with Org's advanced interface:
 (setq denote-date-prompt-use-org-read-date t)
