@@ -70,7 +70,11 @@
   :disable t)
 
 (unpin! org-roam)
+(package! emacsql-sqlite
+  :recipe (:host github :repo "skeeto/emacsql"))
+ 
 (package! org-roam-ui)
+(package! org-attach)
 (package! org-auto-tangle)
 (package! ob-ipython)
 (package! ob-mermaid)
@@ -83,7 +87,6 @@
 
 ;; ~/.doom.d/package.el
 (package! org-transclusion)
-;(package! org-download)
 (package! org-appear :disable t)
 
 ;;(package! ob-napkin)
