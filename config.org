@@ -928,7 +928,7 @@ a separator ' -> '."
     (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
            (selected-repo (completing-read "Select Org Roam Repo: " repos)))
       (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
-      (setq org-attach-id-dir (expand-file-name ".attach" org-roam-farm-path))
+      (setq org-attach-id-dir (expand-file-name ".attach" org-roam-directory))
       (unless (file-exists-p org-attach-id-dir)
         (make-directory org-attach-id-dir t))
       (org-roam-db-sync)
