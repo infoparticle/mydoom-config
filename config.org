@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Dec 06, 2024 Fri"
+Last Saved: "Dec 18, 2024 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -791,6 +791,82 @@ a separator ' -> '."
 
 *** Screenshot - Windows
 
+#+BEGIN_SRC emacs-lisp
+
+(setq org-roam-farm-path "c:/my/org-farm/")
+
+;; Function to Switch Org Roam Repository
+(defun my/org-roam-switch-repo ()
+  "Prompt to switch between Org Roam repositories in the farm."
+  (interactive)
+  (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
+         (selected-repo (completing-read "Select Org Roam Repo: " repos)))
+    (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
+    (setq org-attach-id-dir (expand-file-name ".attach" org-roam-farm-path))
+    (unless (file-exists-p org-attach-id-dir)
+        (make-directory org-attach-id-dir t))
+    (org-roam-db-sync)
+    (message "Switched to Org Roam Repo: %s" selected-repo)))
+
+(map! :leader
+        :desc "screenshot for org-roam"
+        "z s r" #'my/org-roam-switch-repo)
+
+(defun my/org-screenshot-for-roam ()
+  "Take a screenshot and save it as an org attachment with user-selected subdirectory"
+  (interactive)
+
+  ;; Ensure we have org-attach-id-dir set
+  (unless (and (boundp 'org-attach-id-dir) org-attach-id-dir)
+    (error "Please set org-attach-id-dir first"))
+
+  ;; Get subdirectory relative to org-attach-id-dir
+  (setq attach-subdir (file-relative-name
+    (read-directory-name "Select directory to save the screenshot: " org-attach-id-dir)
+    org-attach-id-dir))
+
+  ;; Create full attachment directory path
+  (setq full-attach-dir (expand-file-name attach-subdir org-attach-id-dir))
+  (unless (file-exists-p full-attach-dir)
+    (make-directory full-attach-dir t))
+
+  ;; Create image filename and path
+  (setq img-name
+      (read-string
+       "Image name: "
+       (concat (format-time-string "%Y-%m-%d-%H%M%S") ".png")))
+  (setq img-full-path (replace-regexp-in-string
+                      "/" "\\"
+                      (expand-file-name img-name full-attach-dir)
+                      t t))
+
+  ;; Insert org heading with properties
+  (org-insert-heading)
+  (setq sub-heading-name
+      (read-string
+       "Heading content: "
+       (concat (format-time-string "%Y-%m-%d - "))))
+  (insert  (concat sub-heading-name "         :ATTACH:\n"))
+  (org-entry-put nil "DIR" attach-subdir)
+
+  ;; Insert the attachment link
+  (insert (format "[[attachment:%s]]\n" img-name))
+
+  ;; Save clipboard to image using IrfanView
+  (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil
+               (concat "/clippaste /convert=" img-full-path))
+
+  ;; Display the image
+  (org-display-inline-images))
+
+(map! :leader
+        :desc "screenshot for org-roam"
+        "z s s" #'my/org-screenshot-for-roam)
+#+END_SRC
+
+#+RESULTS:
+: my/org-screenshot-for-roam
+
 #+begin_src emacs-lisp
 
 (require 'url-util) ;needed for encoding spaces to %20
@@ -837,34 +913,88 @@ a separator ' -> '."
 #+end_src
 
 *** org-roam and org-roam-ui
+
 #+BEGIN_SRC emacs-lisp
 
 (after! org-roam
-  ;; 2024-12-06 Fri
+
   (setq org-roam-farm-path "c:/my/org-farm/")
+  (setq org-roam-directory "c:/my/org-farm/work.ord")
 
   ;; Function to Switch Org Roam Repository
-  (defun org-roam-switch-repo ()
+  (defun my/org-roam-switch-repo ()
     "Prompt to switch between Org Roam repositories in the farm."
     (interactive)
     (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
            (selected-repo (completing-read "Select Org Roam Repo: " repos)))
       (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
+      (setq org-attach-id-dir (expand-file-name ".attach" org-roam-farm-path))
+      (unless (file-exists-p org-attach-id-dir)
+        (make-directory org-attach-id-dir t))
       (org-roam-db-sync)
       (message "Switched to Org Roam Repo: %s" selected-repo)))
 
   (map! :leader
-        :desc "set org-roam directory"
-        "m m s" #'my/set-org-roam-directory)
-  )
+        :desc "screenshot for org-roam"
+        "z s r" #'my/org-roam-switch-repo)
+
+  (defun my/org-screenshot-for-roam ()
+    "Take a screenshot and save it as an org attachment with user-selected subdirectory"
+    (interactive)
+
+    ;; Ensure we have org-attach-id-dir set
+    (unless (and (boundp 'org-attach-id-dir) org-attach-id-dir)
+      (error "Please set org-attach-id-dir first"))
+
+    ;; Get subdirectory relative to org-attach-id-dir
+    (setq attach-subdir (file-relative-name
+                         (read-directory-name "Select directory to save the screenshot: " org-attach-id-dir)
+                         org-attach-id-dir))
+
+    ;; Create full attachment directory path
+    (setq full-attach-dir (expand-file-name attach-subdir org-attach-id-dir))
+    (unless (file-exists-p full-attach-dir)
+      (make-directory full-attach-dir t))
+
+    ;; Create image filename and path
+    (setq img-name
+          (read-string
+           "Image name: "
+           (concat (format-time-string "%Y-%m-%d-%H%M%S") ".png")))
+    (setq img-full-path (replace-regexp-in-string
+                         "/" "\\"
+                         (expand-file-name img-name full-attach-dir)
+                         t t))
+
+    ;; Insert org heading with properties
+    (org-insert-heading)
+    (setq sub-heading-name
+          (read-string
+           "Heading content: "
+           (concat (format-time-string "%Y-%m-%d - "))))
+    (insert  (concat sub-heading-name "         :ATTACH:\n"))
+    (org-entry-put nil "DIR" attach-subdir)
+
+    ;; Insert the attachment link
+    (insert (format "[[attachment:%s]]\n" img-name))
+
+    ;; Save clipboard to image using IrfanView
+    (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil
+                  (concat "/clippaste /convert=" img-full-path))
+
+    ;; Display the image
+    (org-display-inline-images))
+
+  (map! :leader
+        :desc "screenshot for org-roam"
+        "z s s" #'my/org-screenshot-for-roam))
 
 #+END_SRC
-
 #+BEGIN_SRC emacs-lisp :tangle no
 (use-package! org-roam
   :ensure t
   :custom
-  (org-roam-directory (file-truename "c:/my/org-roam"))
+  (org-roam-directory (file-truename "c:/my/org-farm/work.ord"))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
          ("C-c n g" . org-roam-graph)
