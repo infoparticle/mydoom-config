@@ -191,6 +191,11 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
         (insert document)
         (goto-char (point-min)))))
 
+(use-package! org-modern
+  :hook (org-mode . org-modern-mode)
+  :custom
+  (org-modern-prefix t))
+
 (org-babel-do-load-languages
 'org-babel-load-languages
 '((python . t)
@@ -452,7 +457,7 @@ a separator ' -> '."
   (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
          (selected-repo (completing-read "Select Org Roam Repo: " repos)))
     (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
-    (setq org-attach-id-dir (expand-file-name ".attach" org-roam-farm-path))
+    (setq org-attach-id-dir (expand-file-name ".attach" org-roam-directory))
     (unless (file-exists-p org-attach-id-dir)
         (make-directory org-attach-id-dir t))
     (org-roam-db-sync)

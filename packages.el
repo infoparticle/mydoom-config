@@ -93,6 +93,7 @@
 (package! org-super-agenda)
 (package! org-sidebar)
 (package! org-present)
+(package! org-modern)
 (package! visual-fill-column)
 (package! ox-reveal)
 
