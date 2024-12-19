@@ -48,7 +48,8 @@
 (setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
-(setq doom-theme 'doom-zenburn)
+;(setq doom-theme 'doom-zenburn)
+(setq doom-theme 'doom-badger)
 
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
@@ -448,76 +449,6 @@ a separator ' -> '."
   :defer 3
                 )
 
-(setq org-roam-farm-path "c:/my/org-farm/")
-
-;; Function to Switch Org Roam Repository
-(defun my/org-roam-switch-repo ()
-  "Prompt to switch between Org Roam repositories in the farm."
-  (interactive)
-  (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
-         (selected-repo (completing-read "Select Org Roam Repo: " repos)))
-    (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
-    (setq org-attach-id-dir (expand-file-name ".attach" org-roam-directory))
-    (unless (file-exists-p org-attach-id-dir)
-        (make-directory org-attach-id-dir t))
-    (org-roam-db-sync)
-    (message "Switched to Org Roam Repo: %s" selected-repo)))
-
-(map! :leader
-        :desc "screenshot for org-roam"
-        "z s r" #'my/org-roam-switch-repo)
-
-(defun my/org-screenshot-for-roam ()
-  "Take a screenshot and save it as an org attachment with user-selected subdirectory"
-  (interactive)
-
-  ;; Ensure we have org-attach-id-dir set
-  (unless (and (boundp 'org-attach-id-dir) org-attach-id-dir)
-    (error "Please set org-attach-id-dir first"))
-
-  ;; Get subdirectory relative to org-attach-id-dir
-  (setq attach-subdir (file-relative-name
-    (read-directory-name "Select directory to save the screenshot: " org-attach-id-dir)
-    org-attach-id-dir))
-
-  ;; Create full attachment directory path
-  (setq full-attach-dir (expand-file-name attach-subdir org-attach-id-dir))
-  (unless (file-exists-p full-attach-dir)
-    (make-directory full-attach-dir t))
-
-  ;; Create image filename and path
-  (setq img-name
-      (read-string
-       "Image name: "
-       (concat (format-time-string "%Y-%m-%d-%H%M%S") ".png")))
-  (setq img-full-path (replace-regexp-in-string
-                      "/" "\\"
-                      (expand-file-name img-name full-attach-dir)
-                      t t))
-
-  ;; Insert org heading with properties
-  (org-insert-heading)
-  (setq sub-heading-name
-      (read-string
-       "Heading content: "
-       (concat (format-time-string "%Y-%m-%d - "))))
-  (insert  (concat sub-heading-name "         :ATTACH:\n"))
-  (org-entry-put nil "DIR" attach-subdir)
-
-  ;; Insert the attachment link
-  (insert (format "[[attachment:%s]]\n" img-name))
-
-  ;; Save clipboard to image using IrfanView
-  (call-process "c:\\opt\\irfanview\\i_view32.exe" nil nil nil
-               (concat "/clippaste /convert=" img-full-path))
-
-  ;; Display the image
-  (org-display-inline-images))
-
-(map! :leader
-        :desc "screenshot for org-roam"
-        "z s s" #'my/org-screenshot-for-roam)
-
 (require 'url-util) ;needed for encoding spaces to %20
 
 (defun my/clean-spaces-from-path (string)
@@ -564,6 +495,20 @@ a separator ' -> '."
 
   (setq org-roam-farm-path "c:/my/org-farm/")
   (setq org-roam-directory "c:/my/org-farm/work.ord")
+
+  (setq org-attach-dir-relative 't)
+
+  (defun my-org-attach-dir (&optional create)
+    "Return custom attachment dir based on properties and base dir."
+    (let* ((base-dir org-attach-id-dir)
+           (dir-prop (org-entry-get nil "DIR"))
+           (full-path (when dir-prop
+                        (expand-file-name dir-prop base-dir))))
+      (when (and create full-path)
+        (make-directory full-path t))
+      full-path))
+
+  (advice-add 'org-attach-dir :override #'my-org-attach-dir)
 
   ;; Function to Switch Org Roam Repository
   (defun my/org-roam-switch-repo ()
