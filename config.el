@@ -27,12 +27,13 @@
   ;;
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
+  ;; NEVER CHANGE THIS AGAIN, TRIED ALL AND JETBRAINSMONOMEDIUM IS THE BOSS!
   (setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
-  ;;(setq myfont "Iosevka"  myfontsize 20)
+  ;;(setq myfont "Iosevka"  myfontsize 22)
    (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 20)
-         doom-unicode-font (font-spec :family "symbola" :size 20))
+         doom-variable-pitch-font (font-spec :family "sans" :size myfontsize)
+         doom-unicode-font (font-spec :family "symbola" :size myfontsize))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
   ;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
@@ -748,109 +749,6 @@ context.  When called with an argument, unconditionally call
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
 
-(require 'denote)
-
-;; Remember to check the doc strings of those variables.
-(setq denote-directory (expand-file-name "c:/my/denotes/"))
-(setq denote-save-buffers nil)
-(setq denote-known-keywords '("emacs" "philosophy" "politics" "economics"))
-(setq denote-infer-keywords t)
-(setq denote-sort-keywords t)
-(setq denote-file-type nil) ; Org is the default, set others here
-(setq denote-prompts '(title keywords))
-(setq denote-excluded-directories-regexp nil)
-(setq denote-excluded-keywords-regexp nil)
-(setq denote-rename-confirmations '(rewrite-front-matter modify-file-name))
-(setq denote-date-format "%y%m%d")
-
-;; Pick dates, where relevant, with Org's advanced interface:
-(setq denote-date-prompt-use-org-read-date t)
-
-
-;; Read this manual for how to specify `denote-templates'.  We do not
-;; include an example here to avoid potential confusion.
-
-
-(setq denote-date-format nil) ; read doc string
-
-;; By default, we do not show the context of links.  We just display
-;; file names.  This provides a more informative view.
-(setq denote-backlinks-show-context t)
-
-;; Also see `denote-link-backlinks-display-buffer-action' which is a bit
-;; advanced.
-
-;; If you use Markdown or plain text files (Org renders links as buttons
-;; right away)
-(add-hook 'text-mode-hook #'denote-fontify-links-mode-maybe)
-
-;; We use different ways to specify a path for demo purposes.
-(setq denote-dired-directories
-      (list denote-directory
-            (thread-last denote-directory (expand-file-name "attachments"))
-            (expand-file-name "~/Documents/books")))
-
-;; Generic (great if you rename files Denote-style in lots of places):
-;; (add-hook 'dired-mode-hook #'denote-dired-mode)
-;;
-;; OR if only want it in `denote-dired-directories':
-(add-hook 'dired-mode-hook #'denote-dired-mode-in-directories)
-
-
-;; Automatically rename Denote buffers using the `denote-rename-buffer-format'.
-(denote-rename-buffer-mode 1)
-
-;; Denote DOES NOT define any key bindings.  This is for the user to
-;; decide.  For example:
-(let ((map global-map))
-  (define-key map (kbd "C-c n n") #'denote)
-  (define-key map (kbd "C-c n c") #'denote-region) ; "contents" mnemonic
-  (define-key map (kbd "C-c n N") #'denote-type)
-  (define-key map (kbd "C-c n d") #'denote-date)
-  (define-key map (kbd "C-c n z") #'denote-signature) ; "zettelkasten" mnemonic
-  (define-key map (kbd "C-c n s") #'denote-subdirectory)
-  (define-key map (kbd "C-c n t") #'denote-template)
-  ;; If you intend to use Denote with a variety of file types, it is
-  ;; easier to bind the link-related commands to the `global-map', as
-  ;; shown here.  Otherwise follow the same pattern for `org-mode-map',
-  ;; `markdown-mode-map', and/or `text-mode-map'.
-  (define-key map (kbd "C-c n i") #'denote-link) ; "insert" mnemonic
-  (define-key map (kbd "C-c n I") #'denote-add-links)
-  (define-key map (kbd "C-c n b") #'denote-backlinks)
-  (define-key map (kbd "C-c n f f") #'denote-find-link)
-  (define-key map (kbd "C-c n f b") #'denote-find-backlink)
-  ;; Note that `denote-rename-file' can work from any context, not just
-  ;; Dired bufffers.  That is why we bind it here to the `global-map'.
-  (define-key map (kbd "C-c n r") #'denote-rename-file)
-  (define-key map (kbd "C-c n R") #'denote-rename-file-using-front-matter))
-
-;; Key bindings specifically for Dired.
-(let ((map dired-mode-map))
-  (define-key map (kbd "C-c C-d C-i") #'denote-link-dired-marked-notes)
-  (define-key map (kbd "C-c C-d C-r") #'denote-dired-rename-files)
-  (define-key map (kbd "C-c C-d C-k") #'denote-dired-rename-marked-files-with-keywords)
-  (define-key map (kbd "C-c C-d C-R") #'denote-dired-rename-marked-files-using-front-matter))
-
-(with-eval-after-load 'org-capture
-  (setq denote-org-capture-specifiers "%l\n%i\n%?")
-  (add-to-list 'org-capture-templates
-               '("n" "New note (with denote.el)" plain
-                 (file denote-last-path)
-                 #'denote-org-capture
-                 :no-save t
-                 :immediate-finish nil
-                 :kill-buffer t
-                 :jump-to-captured t)))
-
-;; Also check the commands `denote-link-after-creating',
-;; `denote-link-or-create'.  You may want to bind them to keys as well.
-
-
-;; If you want to have Denote commands available via a right click
-;; context menu, use the following and then enable
-;; `context-menu-mode'.
-(add-hook 'context-menu-functions #'denote-context-menu)
-
 ;; accept completion from copilot and fallback to company
 (use-package! copilot
   :hook (prog-mode . copilot-mode)
@@ -882,8 +780,6 @@ context.  When called with an argument, unconditionally call
 (key-chord-define-global "LL" 'next-buffer)
 
 (key-chord-mode +1)
-
-(use-package! esup :ensure t)
 
 (global-set-key (kbd "<f2>")  (lambda()(interactive)(find-file "c:/my/emacs/start-page.org")))
 
@@ -1347,6 +1243,49 @@ current buffer is saved."
         (add-hook 'after-save-hook 'my/run-make-on-save nil t))
     (remove-hook 'after-save-hook 'my/run-make-on-save nil t)))
 
+(after! dumb-jump
+  (setq dumb-jump-read-tags t)
+  (setq dumb-jump-disable-obsolete-warnings t)
+
+  ;; Aggressive caching
+  (setq dumb-jump-max-find-time 5)
+  (setq dumb-jump-prefer-searcher 'rg)  ; Use ripgrep - it's faster!
+  (setq dumb-jump-aggressive t))         ; More aggressive searching
+
+(defun proj-build-ctags ()
+  "Build ctags for the current project."
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (if default-directory
+        (progn
+          (message "Building ctags in %s" default-directory)
+          (shell-command "universal-ctags -R --languages=Java --exclude=.git --exclude=target"))
+      (message "Not in a project!"))))
+
+(defun proj-update-ctags ()
+  "Update ctags for the current project."
+  (interactive)
+  (proj-build-ctags))  ; Simply re-run the build for simplicity
+
+;; If you want to be extra sure, explicitly set the path
+(setq tags-file-name (expand-file-name "tags" (projectile-project-root)))
+(setq tags-table-list `(,(projectile-project-root)))
+
+(use-package! citre
+  :defer t
+  :init
+  ;; Configure basic settings
+  (setq citre-readtags-program "readtags.exe"  ; The star of our show
+        citre-ctags-program "universal-ctags.exe"        ; Its trusty sidekick
+        citre-use-project-root-when-creating-tags t
+        citre-prompt-language-for-ctags-command t)
+
+  :config
+  ;; The good stuff - default keybindings
+  (map! :after evil
+        :n "gd" #'citre-jump
+        :n "gb" #'citre-jump-back))
+
 (add-to-list 'exec-path "C:/tools/ghc-9.2.3/bin")
 
 (after! rustic-flycheck
@@ -1391,6 +1330,9 @@ current buffer is saved."
   (when buffer-file-name
     (setq-local buffer-save-without-query t)))
 
+(remove-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode)
+(remove-hook 'lisp-mode-hook 'rainbow-delimiters-mode)
+
 (use-package! aggressive-indent
   :defer 3
   :config
@@ -1399,26 +1341,49 @@ current buffer is saved."
 (use-package! sly
   :init
   (with-system windows-nt
-   (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
+    (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
     (setq inferior-lisp-program "sbcl"))
   ;;(add-hook 'lisp-mode-hook 'sly-mode) ;;invoke sly on demand
   )
-(use-package! sly-quicklisp
-  )
-(use-package! highlight-sexp
-  :config
-  (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
-  (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
+(use-package! sly-quicklisp)
 
-(use-package! symex
+(after! paren
+  (setq show-paren-style nil)  ;; Match the entire expression (optional)
+  (set-face-attribute 'show-paren-match nil
+                      :underline t       ;; Add underline
+                      :foreground "red"    ;; No foreground color
+                      :background nil))  ;; No background color
+
+;; https://discourse.doomemacs.org/t/tip-heres-how-to-replace-rainbow-delimiters/3307
+(fset 'rainbow-delimiters-mode #'ignore)
+(use-package! paren-face
   :config
-  (symex-initialize)
-  (global-set-key (kbd "C-c ;") 'symex-mode-interface))  ; or whatever keybinding you like
-(add-hook 'symex-mode-interface-hook
-          (lambda ()
-            (setq cursor-type 'bar) ; Set your desired cursor type here
-            (set-cursor-color "red")) ; Set your desired cursor color here
-          )
+  (add-hook 'lisp-mode-hook 'paren-face-mode)
+  (add-hook 'emacs-lisp-mode-hook 'paren-face-mode))
+
+
+(use-package! lispy
+  :hook ((emacs-lisp-mode
+          lisp-mode
+          lisp-data-mode
+          clojure-mode
+          scheme-mode
+          racket-mode) . lispy-mode)
+  :config
+  (setq lispy-no-space t))  ;; Example: prevent spaces after parentheses
+
+;; Enable lispyville for enhanced editing
+(use-package! lispyville
+  :hook (lispy-mode . lispyville-mode)
+  :config
+  ;; Configure Lispyville key themes
+  (lispyville-set-key-theme
+   '(operators          ; Enable d/y/c as operators
+     c-w                ; Add better killing behavior
+     additional         ; Extra lispy functionality
+     slurp/barf-cp      ; Structural editing for slurping/barfing
+     commentary         ; Commenting functionality
+     movement)))        ; Vim-style movement with h/j/k/l
 
 (use-package! rustic
   :bind (:map rustic-mode-map

@@ -4,13 +4,21 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(connection-local-criteria-alist
-   '(((:application eshell) eshell-connection-default-profile)
+   '(((:application tramp :protocol "kubernetes")
+      tramp-kubernetes-connection-local-default-profile)
+     ((:application eshell) eshell-connection-default-profile)
      ((:application tramp :protocol "flatpak")
       tramp-container-connection-local-default-flatpak-profile)
      ((:application tramp) tramp-connection-local-default-system-profile
       tramp-connection-local-default-shell-profile)))
  '(connection-local-profile-alist
-   '((eshell-connection-default-profile (eshell-path-env-list))
+   '((tramp-kubernetes-connection-local-default-profile
+      (tramp-config-check . tramp-kubernetes--current-context-data)
+      (tramp-extra-expand-args 97
+       (tramp-kubernetes--container (car tramp-current-connection)) 104
+       (tramp-kubernetes--pod (car tramp-current-connection)) 120
+       (tramp-kubernetes--context-namespace (car tramp-current-connection))))
+     (eshell-connection-default-profile (eshell-path-env-list))
      (tramp-container-connection-local-default-flatpak-profile
       (tramp-remote-path "/app/bin" tramp-default-remote-path "/bin" "/usr/bin"
                          "/sbin" "/usr/sbin" "/usr/local/bin" "/usr/local/sbin"
@@ -65,7 +73,9 @@
      (tramp-connection-local-default-system-profile (path-separator . ":")
       (null-device . "/dev/null"))))
  '(custom-safe-themes
-   '("b5fd9c7429d52190235f2383e47d340d7ff769f141cd8f9e7a4629a81abc6b19"
+   '("456697e914823ee45365b843c89fbc79191fdbaff471b29aad9dcbe0ee1d5641"
+     "dccf4a8f1aaf5f24d2ab63af1aa75fd9d535c83377f8e26380162e888be0c6a9"
+     "b5fd9c7429d52190235f2383e47d340d7ff769f141cd8f9e7a4629a81abc6b19"
      "4e2e42e9306813763e2e62f115da71b485458a36e8b4c24e17a2168c45c9cf9d"
      "691d671429fa6c6d73098fc6ff05d4a14a323ea0a18787daeb93fde0e48ab18b"
      "29b4f767c48da68f8f3c2bbf0dde2be58e4ed9c97e685af5a7ab7844f0d08b8b"

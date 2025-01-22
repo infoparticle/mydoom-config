@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Dec 19, 2024 Thu"
+Last Saved: "Jan 22, 2025 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -76,6 +76,8 @@ Last Saved: "Dec 19, 2024 Thu"
     - [[#clojure][clojure]]
     - [[#java][java]]
     - [[#java---compile-on-save][java - compile on save]]
+    - [[#dumb-jump][dumb-jump]]
+    - [[#ctags-and-friends][ctags and friends]]
     - [[#vterm][vterm]]
     - [[#lsp-java---disabling-lsp-who-needs-autocomplete][lsp-java - disabling lsp, who needs autocomplete]]
     - [[#haskell][haskell]]
@@ -149,12 +151,13 @@ Get all fonts present
   ;;
   ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
   ;; font string. You generally only need these two:
+  ;; NEVER CHANGE THIS AGAIN, TRIED ALL AND JETBRAINSMONOMEDIUM IS THE BOSS!
   (setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
   ;;(setq myfont "Fira Code Medium"  myfontsize 17)
-  ;;(setq myfont "Iosevka"  myfontsize 20)
+  ;;(setq myfont "Iosevka"  myfontsize 22)
    (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size 20)
-         doom-unicode-font (font-spec :family "symbola" :size 20))
+         doom-variable-pitch-font (font-spec :family "sans" :size myfontsize)
+         doom-unicode-font (font-spec :family "symbola" :size myfontsize))
   ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
   ;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
@@ -1152,7 +1155,6 @@ context.  When called with an argument, unconditionally call
 TODO:refine it!
 https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 
-#+BEGIN_SRC emacs-lisp
 (require 'denote)
 
 ;; Remember to check the doc strings of those variables.
@@ -1255,7 +1257,7 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 ;; context menu, use the following and then enable
 ;; `context-menu-mode'.
 (add-hook 'context-menu-functions #'denote-context-menu)
-#+END_SRC
+
 *** github copilot
 
 #+BEGIN_SRC emacs-lisp
@@ -1300,9 +1302,7 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 
 *** esup
 
-#+begin_src emacs-lisp
 (use-package! esup :ensure t)
-#+end_src
 
 *** scratch
 #+begin_src emacs-lisp
@@ -2138,7 +2138,75 @@ current buffer is saved."
 
 #+RESULTS:
 
+*** dumb-jump
+#+BEGIN_SRC emacs-lisp
+(after! dumb-jump
+  (setq dumb-jump-read-tags t)
+  (setq dumb-jump-disable-obsolete-warnings t)
 
+  ;; Aggressive caching
+  (setq dumb-jump-max-find-time 5)
+  (setq dumb-jump-prefer-searcher 'rg)  ; Use ripgrep - it's faster!
+  (setq dumb-jump-aggressive t))         ; More aggressive searching
+#+END_SRC
+*** ctags and friends
+(use-package! counsel-gtags
+  :hook ((java-mode . counsel-gtags-mode)
+         (prog-mode . counsel-gtags-mode)) ; Enable for all programming modes
+  :config
+  (setq counsel-gtags-auto-update t) ; Automatically update tags when saving files
+  (map! :map counsel-gtags-mode-map
+        "M-." #'counsel-gtags-dwim          ; Go to definition or usage
+        "M-?" #'counsel-gtags-find-reference ; Find references
+        "M-," #'counsel-gtags-go-back       ; Go back
+        "C-c g i" #'counsel-gtags-find-symbol ; Find symbol
+        "C-c g u" #'counsel-gtags-update-tags ; Update tags
+        ))
+;; Add this to your config.el
+(after! counsel-gtags
+  (setq counsel-gtags-path-style 'root)  ; Use project root as base
+  (setq counsel-gtags-auto-update t)    ; Auto-update tags
+  ;; Important part - tell it where to find TAGS
+  (setq counsel-gtags-tags-file-name "tags"))
+
+
+#+BEGIN_SRC emacs-lisp
+(defun proj-build-ctags ()
+  "Build ctags for the current project."
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (if default-directory
+        (progn
+          (message "Building ctags in %s" default-directory)
+          (shell-command "universal-ctags -R --languages=Java --exclude=.git --exclude=target"))
+      (message "Not in a project!"))))
+
+(defun proj-update-ctags ()
+  "Update ctags for the current project."
+  (interactive)
+  (proj-build-ctags))  ; Simply re-run the build for simplicity
+
+;; If you want to be extra sure, explicitly set the path
+(setq tags-file-name (expand-file-name "tags" (projectile-project-root)))
+(setq tags-table-list `(,(projectile-project-root)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package! citre
+  :defer t
+  :init
+  ;; Configure basic settings
+  (setq citre-readtags-program "readtags.exe"  ; The star of our show
+        citre-ctags-program "universal-ctags.exe"        ; Its trusty sidekick
+        citre-use-project-root-when-creating-tags t
+        citre-prompt-language-for-ctags-command t)
+
+  :config
+  ;; The good stuff - default keybindings
+  (map! :after evil
+        :n "gd" #'citre-jump
+        :n "gb" #'citre-jump-back))
+#+END_SRC
 *** vterm
 (add-to-list 'load-path "c:\\opt\\emacs-libvterm\\")
 (use-package vterm)
@@ -2222,13 +2290,18 @@ https://dangirsh.org/projects/doom-config.html#rust
 (remove-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode)
 (remove-hook 'lisp-mode-hook 'rainbow-delimiters-mode)
 
-(use-package! paren-face
+(use-package! highlight-sexp
   :config
-  (add-hook 'lisp-mode-hook 'paren-face-mode)
-  (add-hook 'emacs-lisp-mode-hook 'paren-face-mode))
+  (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
+  (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
+
 
 
 #+begin_src emacs-lisp
+
+(remove-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode)
+(remove-hook 'lisp-mode-hook 'rainbow-delimiters-mode)
+
 (use-package! aggressive-indent
   :defer 3
   :config
@@ -2237,16 +2310,50 @@ https://dangirsh.org/projects/doom-config.html#rust
 (use-package! sly
   :init
   (with-system windows-nt
-   (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
+    (add-to-list 'exec-path "c:/opt/lisp/sbcl/")
     (setq inferior-lisp-program "sbcl"))
   ;;(add-hook 'lisp-mode-hook 'sly-mode) ;;invoke sly on demand
   )
-(use-package! sly-quicklisp
-  )
-(use-package! highlight-sexp
+(use-package! sly-quicklisp)
+
+(after! paren
+  (setq show-paren-style nil)  ;; Match the entire expression (optional)
+  (set-face-attribute 'show-paren-match nil
+                      :underline t       ;; Add underline
+                      :foreground "red"    ;; No foreground color
+                      :background nil))  ;; No background color
+
+;; https://discourse.doomemacs.org/t/tip-heres-how-to-replace-rainbow-delimiters/3307
+(fset 'rainbow-delimiters-mode #'ignore)
+(use-package! paren-face
   :config
-  (add-hook 'lisp-mode-hook 'highlight-sexp-mode)
-  (add-hook 'emacs-lisp-mode-hook 'highlight-sexp-mode))
+  (add-hook 'lisp-mode-hook 'paren-face-mode)
+  (add-hook 'emacs-lisp-mode-hook 'paren-face-mode))
+
+
+(use-package! lispy
+  :hook ((emacs-lisp-mode
+          lisp-mode
+          lisp-data-mode
+          clojure-mode
+          scheme-mode
+          racket-mode) . lispy-mode)
+  :config
+  (setq lispy-no-space t))  ;; Example: prevent spaces after parentheses
+
+;; Enable lispyville for enhanced editing
+(use-package! lispyville
+  :hook (lispy-mode . lispyville-mode)
+  :config
+  ;; Configure Lispyville key themes
+  (lispyville-set-key-theme
+   '(operators          ; Enable d/y/c as operators
+     c-w                ; Add better killing behavior
+     additional         ; Extra lispy functionality
+     slurp/barf-cp      ; Structural editing for slurping/barfing
+     commentary         ; Commenting functionality
+     movement)))        ; Vim-style movement with h/j/k/l
+#+end_src
 
 (use-package! symex
   :config
@@ -2257,10 +2364,7 @@ https://dangirsh.org/projects/doom-config.html#rust
             (setq cursor-type 'bar) ; Set your desired cursor type here
             (set-cursor-color "red")) ; Set your desired cursor color here
           )
-#+end_src
 
-#+results:
-| lambda | nil | (setq cursor-type 'bar) | (set-cursor-color red) |
 
 *** rust programming - rustic
 
