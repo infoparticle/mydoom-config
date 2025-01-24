@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jan 22, 2025 Wed"
+Last Saved: "Jan 23, 2025 Thu"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -77,6 +77,7 @@ Last Saved: "Jan 22, 2025 Wed"
     - [[#java][java]]
     - [[#java---compile-on-save][java - compile on save]]
     - [[#dumb-jump][dumb-jump]]
+    - [[#projectile][projectile]]
     - [[#ctags-and-friends][ctags and friends]]
     - [[#vterm][vterm]]
     - [[#lsp-java---disabling-lsp-who-needs-autocomplete][lsp-java - disabling lsp, who needs autocomplete]]
@@ -2149,6 +2150,11 @@ current buffer is saved."
   (setq dumb-jump-prefer-searcher 'rg)  ; Use ripgrep - it's faster!
   (setq dumb-jump-aggressive t))         ; More aggressive searching
 #+END_SRC
+
+*** projectile
+#+BEGIN_SRC emacs-lisp
+
+#+END_SRC
 *** ctags and friends
 (use-package! counsel-gtags
   :hook ((java-mode . counsel-gtags-mode)
@@ -2529,15 +2535,66 @@ https://dangirsh.org/projects/doom-config.html#rust
 
 *** open current folder in windows explorer
 #+BEGIN_SRC emacs-lisp
-(defun my/open-current-directory-in-explorer ()
-  "Open the current directory in Windows Explorer."
+(defun path-to-windows (path)
+  (replace-regexp-in-string "/" "\\" path t t))
+
+(defun my/open-path-in-explorer ()
+  "Open the current buffer's file in Explorer."
   (interactive)
+  "Open current file/directory in explorer."
+  (interactive)
+  (if-let ((path (or buffer-file-name default-directory)))
+      (start-process "explorer" nil "explorer"
+                     (path-to-windows (file-name-directory path)))
+    (error "No file/directory found")))
 
-  (shell-command (concat "start " (file-name-directory buffer-file-name))))
+(defun my/open-project-in-explorer ()
+  "Open project root in explorer."
+  (interactive)
+  (if-let ((root (doom-project-root)))
+      (start-process "explorer" nil "explorer"
+                     (path-to-windows root))
+    (error "Not in a project")))
 
-(global-set-key (kbd "C-c o") 'my/open-current-directory-in-explorer)
+;; IntelliJ integration
+(defvar idea-path "C:/Program Files/JetBrains/IntelliJ IDEA Community Edition 2023.2.4/bin/idea64.exe")
 
+(defun my/open-in-idea ()
+  "Open current file in IntelliJ."
+  (interactive)
+  (if-let ((path buffer-file-name))
+      (start-process "idea" nil idea-path (path-to-windows path))
+    (error "No file found")))
+
+(defun my/open-project-in-idea ()
+  "Open project in IntelliJ."
+  (interactive)
+  (if-let ((root (doom-project-root)))
+      (start-process "idea" nil idea-path (path-to-windows root))
+    (error "Not in a project")))
+
+(setq web-bookmarks-file "~/org/bookmarks.org")
+(defun my/add-web-bookmark ()
+  "Add URL with description to bookmarks.org"
+  (interactive)
+  (let ((url (read-string "URL: "))
+        (desc (read-string "Description: ")))
+    (with-current-buffer (find-file-noselect web-bookmarks-file)
+      (goto-char (point-max))
+      (insert (format "- [[%s][%s]]\n" url desc))
+      (save-buffer))))
+
+(map!
+ "C-c o e" #'my/open-path-in-explorer
+ "C-c o E" #'my/open-project-in-explorer
+ "C-c o i" #'my/open-in-idea
+ "C-c o I" #'my/open-project-in-idea
+ "C-c o b" #'my/add-web-bookmark)
 #+END_SRC
+
+#+RESULTS:
+: my/add-web-bookmark
+
 *** Create Trading Journal Entry
 
 #+begin_src emacs-lisp
