@@ -17,40 +17,42 @@
 (setq user-full-name "Gopinath Sadasivam"
       user-mail-address "noemail@gopi")
 
-  ;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
-  ;; are the three important ones:
-  ;;
-  ;; + `doom-font'
-  ;; + `doom-variable-pitch-font'
-  ;; + `doom-big-font' -- used for `doom-big-font-mode'; use this for
-  ;;   presentations or streaming.
-  ;;
-  ;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
-  ;; font string. You generally only need these two:
-  ;; NEVER CHANGE THIS AGAIN, TRIED ALL AND JETBRAINSMONOMEDIUM IS THE BOSS!
-  (setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
-  ;;(setq myfont "Fira Code Medium"  myfontsize 17)
-  ;;(setq myfont "Iosevka"  myfontsize 22)
-   (setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
-         doom-variable-pitch-font (font-spec :family "sans" :size myfontsize)
-         doom-unicode-font (font-spec :family "symbola" :size myfontsize))
-  ;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
-  ;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
+;; Doom exposes five (optional) variables for controlling fonts in Doom. Here
+;; are the three important ones:
+;;
+;; + `doom-font'
+;; + `doom-variable-pitch-font'
+;; + `doom-big-font' -- used for `doom-big-font-mode'; use this for
+;;   presentations or streaming.
+;;
+;; They all accept either a font-spec, font string ("Input Mono-12"), or xlfd
+;; font string. You generally only need these two:
+;; NEVER CHANGE THIS AGAIN, TRIED ALL AND JETBRAINSMONOMEDIUM IS THE BOSS!
+(setq myfont "JetBrainsMonoMedium NF"  myfontsize 20)
+;;(setq myfont "Fira Code Medium"  myfontsize 17)
+;;(setq myfont "Iosevka"  myfontsize 22)
+(setq doom-font (font-spec :family myfont :size myfontsize :weight 'medium)
+      doom-variable-pitch-font (font-spec :family "sans" :size myfontsize)
+      doom-unicode-font (font-spec :family "symbola" :size myfontsize))
+;;(setq doom-font (font-spec :family "Fira Code Medium" :size 17 :weight 'medium)
+;;      doom-variable-pitch-font (font-spec :family "sans" :size 13))
 
 
-  ;; There are two ways to load a theme. Both assume the theme is installed and
-  ;; available. You can either set `doom-theme' or manually load a theme with the
-  ;; `load-theme' function. This is the default:
-  ;;(setq doom-theme 'doom-one-light)
-  ;;(setq doom-theme 'doom-opera-light)
+;;(setq doom-theme 'doom-one-light)
+;;(setq doom-theme 'doom-opera-light)
 
-(setq hl-sexp-foreground-color nil
-      hl-sexp-background-color "gray20") ;;light yellow
 (setq tao-theme-use-height t
       tao-theme-use-sepia nil
       tao-theme-use-boxes nil)
-;(setq doom-theme 'doom-zenburn)
+                                        ;(setq doom-theme 'doom-zenburn)
 (setq doom-theme 'doom-badger)
+
+(defun my/set-default-font ()
+  (interactive)
+  (let* ((font (completing-read "Select font: " (font-family-list)))
+         (size (read-number "Font size: " 20)))
+    (setq doom-font (font-spec :family font :size size))
+    (doom/reload-font)))
 
 ;;  (setq hl-sexp-foreground-color nil
 ;;        hl-sexp-background-color "#00253c") ;;dark blue
@@ -1619,45 +1621,56 @@ current buffer is saved."
 
   (find-file (concat trade-journal-dir myvar/file-name)))
 
-(defun my/zk-insert-link-into-selection(selected-file start end)
-  (if (use-region-p)
-      (let ((selected-text (buffer-substring start end)))
-        (kill-region start end)
-        (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
-                         selected-text)
-        (save-buffer)))
-  (setq mark-active nil))
+(defun zk/update-timestamp ()
+  "Update the :UPDATED: property only if content has changed."
+  (when (and (derived-mode-p 'org-mode)
+             (org-entry-get (point) "CUSTOM_ID")
+             (buffer-modified-p))  ; Only if buffer is modified
+    (org-set-property "UPDATED" (format-time-string "%Y-%m-%d %H:%M:%S"))))
 
-(defun my/zk-add-backlink (selected-file current-file)
-  (find-file (concat (projectile-project-root) selected-file))
-  (goto-char (point-max))
-  (insert "\n- ")
-  (org-insert-link 0 (concat "file:" current-file )
-                   (concat
-                    "<- "
-                    (file-name-sans-extension
-                     (file-name-nondirectory current-file))))
-  (save-buffer))
+(add-hook 'before-save-hook 'zk/update-timestamp)
 
-(defun my/zk-add-see-also (selected-file)
-  (goto-char (point-max))
-  (insert "\n- ")
-  (org-insert-link 0 (concat "file:" (projectile-project-root) selected-file )
-                   (concat
-                    "-> "
-                    (file-name-sans-extension
-                     (file-name-nondirectory selected-file))))
-  (save-buffer))
 
-(defun my/zk-embed-link-and-add-back-link()
+(defun zk/get-id-by-title (title)
+  "Get the CUSTOM_ID of a Zettel by TITLE in the current Org buffer.
+Returns the CUSTOM_ID if found, otherwise nil."
+  (let (custom-id)
+    (org-map-entries
+     (lambda ()
+       (when (and (string= (org-get-heading t t t t) title)
+                  (org-entry-get (point) "CUSTOM_ID"))
+         (setq custom-id (org-entry-get (point) "CUSTOM_ID"))))
+     nil 'file)
+    custom-id))
+
+(defun zk/get-all-titles ()
+  "Get all Zettel titles (headings) in the current Org buffer."
+  (when (derived-mode-p 'org-mode)
+    (org-map-entries
+     (lambda () (org-get-heading t t t t))
+     nil 'file)))
+
+(defun zk/insert-link-by-title ()
+  "Search for a Zettel by title and insert a link to its CUSTOM_ID."
   (interactive)
-  (setq current-file (buffer-file-name))
-  (setq selected-file (ivy-completing-read
-                       "File : "
-                       (projectile-current-project-files)))
-  (my/zk-insert-link-into-selection selected-file (region-beginning) (region-end))
-  (my/zk-add-see-also selected-file)
-  (my/zk-add-backlink selected-file current-file))
+  (if-let* ((titles (zk/get-all-titles)))
+      (let* ((title (completing-read "Zettel title: " titles))
+             (id (zk/get-id-by-title title)))
+        (if id
+            (insert (format "[[#%s][%s]]" id title))
+          (message "No CUSTOM_ID found for title: %s" title)))
+    (message "No Zettel titles found in the current buffer.")))
+
+(defun zk/copy-link-to-zettel ()
+  "Create and copy a link to the current Zettel."
+  (interactive)
+  (let ((id (org-entry-get (point) "CUSTOM_ID"))
+        (title (org-get-heading t t t t)))
+    (if id
+        (progn
+          (kill-new (format "[[#%s][%s]]" id title))
+          (message "Copied link: [[#%s][%s]]" id title))
+      (message "No CUSTOM_ID found for this heading."))))
 
 (defun rename-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME."

@@ -3,6 +3,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(blink-cursor-mode nil)
+ '(column-number-mode t)
  '(connection-local-criteria-alist
    '(((:application tramp :protocol "kubernetes")
       tramp-kubernetes-connection-local-default-profile)
@@ -73,7 +75,12 @@
      (tramp-connection-local-default-system-profile (path-separator . ":")
       (null-device . "/dev/null"))))
  '(custom-safe-themes
-   '("456697e914823ee45365b843c89fbc79191fdbaff471b29aad9dcbe0ee1d5641"
+   '("13096a9a6e75c7330c1bc500f30a8f4407bd618431c94aeab55c9855731a95e1"
+     "9013233028d9798f901e5e8efb31841c24c12444d3b6e92580080505d56fd392"
+     "81f53ee9ddd3f8559f94c127c9327d578e264c574cda7c6d9daddaec226f87bb"
+     "df6dfd55673f40364b1970440f0b0cb8ba7149282cf415b81aaad2d98b0f0290"
+     "f5f80dd6588e59cfc3ce2f11568ff8296717a938edd448a947f9823a4e282b66"
+     "456697e914823ee45365b843c89fbc79191fdbaff471b29aad9dcbe0ee1d5641"
      "dccf4a8f1aaf5f24d2ab63af1aa75fd9d535c83377f8e26380162e888be0c6a9"
      "b5fd9c7429d52190235f2383e47d340d7ff769f141cd8f9e7a4629a81abc6b19"
      "4e2e42e9306813763e2e62f115da71b485458a36e8b4c24e17a2168c45c9cf9d"
@@ -123,6 +130,7 @@
      "b616b5b7a808c4d46a90549bca2f4dcb5bff4f0e04ddaece5611b186f7e9de53"
      "039b086d595ebc1e32a33039dafa2003569ede1abb3c0022cc35974887b4c58f"
      "e8bbe184ba98a77000a75b261993c3aa4d24e0d1224a96784315b0dae1d6f64a" default))
+ '(display-line-numbers-type nil)
  '(doom-themes-neotree-enable-closed-chevron-icons t)
  '(doom-themes-neotree-enable-folder-icons t)
  '(epg-gpg-home-directory "c:/Users/gopinat/AppData/Roaming/gnupg")
@@ -141,6 +149,8 @@
       (setq-local org-roam-db-location (concat org-roam-directory "org-roam.db")))
      (org-roam-db-location expand-file-name "./org-roam.db")
      (org-roam-directory expand-file-name ".")))
+ '(size-indication-mode t)
+ '(tool-bar-mode nil)
  '(warning-suppress-types '((org-element-cache))))
 
 ;(custom-set-faces
