@@ -1032,6 +1032,26 @@ context.  When called with an argument, unconditionally call
 
 (global-set-key (kbd "C-M-i") 'iedit-mode)
 
+(defun my/git-diff-to-buffer ()
+  "Run `git diff` and display results in `diff-mode`, read-only."
+  (interactive)
+  (let ((buf (get-buffer-create "*Git Diff*")))
+    (with-current-buffer buf
+      (erase-buffer)
+      (call-process "git" nil buf nil "diff")
+      (diff-mode)
+      (read-only-mode 1))  ;; Make buffer read-only
+    (switch-to-buffer buf)))
+
+(defun my/git-quick-commit-and-push ()
+  "Quickly commit all changes and push, allowing the user to edit the default commit message."
+  (interactive)
+  (let* ((default-msg "wip - updates")
+         (commit-msg (completing-read "Commit message: " nil nil nil default-msg)))
+    (when (yes-or-no-p (format "Commit and push with message: \"%s\"? " commit-msg))
+      (shell-command (format "git add . && git commit -m \"%s\" && git push" commit-msg))
+      (message "? Git commit & push done! ??"))))
+
  (use-package! highlight-symbol
         :defer 10
         :bind (("M-n" . highlight-symbol-next)
