@@ -1294,7 +1294,6 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 
 *** github copilot
 
-#+BEGIN_SRC emacs-lisp
 ;; accept completion from copilot and fallback to company
 (use-package! copilot
   :hook (prog-mode . copilot-mode)
@@ -1316,7 +1315,6 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 
   ;; Bind the custom function to <tab> in Evil's insert state
   (evil-define-key 'insert 'global (kbd "C-<tab>") 'my/copilot-tab-or-default))
-#+END_SRC
 
 *** key-chord
 #+BEGIN_SRC emacs-lisp
