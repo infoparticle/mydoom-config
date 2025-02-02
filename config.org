@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Jan 27, 2025 Mon"
+Last Saved: "Feb 02, 2025 Sun"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -1263,6 +1263,34 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 ;; context menu, use the following and then enable
 ;; `context-menu-mode'.
 (add-hook 'context-menu-functions #'denote-context-menu)
+
+
+*** COMMENT ace window and winner mode zoom
+
+#+BEGIN_SRC emacs-lisp
+(use-package! ace-window
+  :ensure t
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?h ?j ?k ?l))
+  (map! :leader
+        :desc "switch windows with ace-window"
+        "w ."  #'ace-window))
+
+(defun toggle-maximize-window ()
+  "Toggle between current window and maximized state."
+  (interactive)
+  (if (and (boundp 'winner-mode) winner-mode)
+      (if (eq last-command 'toggle-maximize-window)
+          (winner-undo)  ;; Restore previous layout
+        (progn
+          (winner-save-unconditionally) ;; Save layout
+          (delete-other-windows)))
+    (message "Enable winner-mode for proper restore!")))
+
+(map! :leader
+      :desc "Toggle maximize window"
+      "w z" #'toggle-maximize-window)
+#+END_SRC
 
 *** github copilot
 
