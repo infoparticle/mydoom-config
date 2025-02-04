@@ -513,6 +513,14 @@ a separator ' -> '."
 
   (advice-add 'org-attach-dir :override #'my-org-attach-dir)
 
+  (defun my/org-roam-switch-repo-by-path(repo-path)
+    (setq org-roam-directory (expand-file-name repo-path org-roam-farm-path))
+    (setq org-attach-id-dir (expand-file-name ".attach" org-roam-directory))
+    (unless (file-exists-p org-attach-id-dir)
+      (make-directory org-attach-id-dir t)
+                                        ;(org-roam-db-sync)
+      (message "Switched to Org Roam Repo: %s" repo-path)))
+
   ;; Function to Switch Org Roam Repository
   (defun my/org-roam-switch-repo ()
     "Prompt to switch between Org Roam repositories in the farm."
@@ -1050,7 +1058,7 @@ context.  When called with an argument, unconditionally call
          (commit-msg (completing-read "Commit message: " nil nil nil default-msg)))
     (when (yes-or-no-p (format "Commit and push with message: \"%s\"? " commit-msg))
       (shell-command (format "git add . && git commit -m \"%s\" && git push" commit-msg))
-      (message "? Git commit & push done! ??"))))
+      (message "Git commit & push done!"))))
 
  (use-package! highlight-symbol
         :defer 10
@@ -1838,11 +1846,10 @@ Returns the CUSTOM_ID if found, otherwise nil."
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
-(defun my/open/work-rum-tasks ()
+(defun my/open/work-org-repo ()
   (interactive)
-  (split-window-right)
-  (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/rum-tasks.org"))
-
+  (find-file "c:/my/org-farm/work.ord/tasks/my-tasks.org")
+  (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
 
 (defun my/open/quick-notes ()
   (interactive)
@@ -1852,7 +1859,7 @@ Returns the CUSTOM_ID if found, otherwise nil."
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
-      "1" #'my/open/work-rum-tasks
+      "1" #'my/open/work-org-repo
       "2" #'my/open/quick-notes
       )
 
