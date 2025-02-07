@@ -1039,6 +1039,9 @@ context.  When called with an argument, unconditionally call
           ".clangd")))
 
 (global-set-key (kbd "C-M-i") 'iedit-mode)
+(add-hook! 'prog-mode-hook
+  (modify-syntax-entry ?- "w")
+  (modify-syntax-entry ?_ "w"))
 
 (defun my/git-diff-to-buffer ()
   "Run `git diff` and display results in `diff-mode`, read-only."
@@ -1102,11 +1105,11 @@ context.  When called with an argument, unconditionally call
       "o i" #'my/pick-infodir-name)
 
 (setq yas-snippet-dirs
-      '("~/emacstools/snippets"                 ;; personal snippets
-        ))
+      '("~/emacstools/snippets")) ;; personal snippets
 
-(use-package ivy-yasnippet
-  :bind ("C-c y" . ivy-yasnippet))
+(map! :map org-mode-map
+     "C-c y" #'yas-expand
+     "C-c C-y" #'yas-insert-snippet)
 
 (when (executable-find "ipython")
   (setq python-shell-interpreter "ipython"))
@@ -1476,9 +1479,10 @@ current buffer is saved."
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
+(setq my-work-proj-dir "c:/my/org-farm/work.ord/projects/")
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                 (directory-files "c:/my/work/work-projects")))
+                                 (directory-files my-work-proj-dir)))
   (sort wiki-list 'string>))
 
 (defun my/open-work-project (work-proj-root-arg work-proj-name)
@@ -1489,7 +1493,7 @@ current buffer is saved."
     (message "project not found %s" work-proj-root-arg)))
 
 (defun my/pick-work-projects-name-action (x)
-  (my/open-work-project "C:/my/work/work-projects" x))
+  (my/open-work-project my-work-proj-dir x))
 
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
@@ -1504,7 +1508,7 @@ current buffer is saved."
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
-         (project_extension (completing-read "Directory Extension: " '("work-project" "team-mates" "simple-todo" "meetings")))
+         (project_extension (completing-read "Directory Extension: " '("project" "task" "tmp" "thoughts")))
          (date-stamp (format-time-string "%Y-%m-%d"))
          (project-dir (concat (file-name-as-directory root-dir) date-stamp "-"
                               (replace-regexp-in-string "[^[:alnum:]]" "-"
@@ -1518,13 +1522,12 @@ current buffer is saved."
     (save-buffer)))
 (defun my/create-projects-wrapper()
   (interactive)
-  (my/create-projects "c:/my/work/work-projects"))
+  (my/create-projects my-work-proj-dir))
 
 (map! :leader
       :desc "create or open projects"
       "<f2> c" #'my/create-projects-wrapper
-      "<f2> o" #'my/pick-work-projects-name
-      )
+      "<f2> o" #'my/pick-work-projects-name)
 
 (defun path-to-windows (path)
   (replace-regexp-in-string "/" "\\" path t t))
@@ -1848,7 +1851,10 @@ Returns the CUSTOM_ID if found, otherwise nil."
 
 (defun my/open/work-org-repo ()
   (interactive)
+  (delete-other-windows)
   (find-file "c:/my/org-farm/work.ord/tasks/my-tasks.org")
+  (split-window-right)
+  (find-file "c:/my/org-farm/work.ord/tasks/my-tasks-journal.org")
   (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
 
 (defun my/open/quick-notes ()

@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Feb 04, 2025 Tue"
+Last Saved: "Feb 06, 2025 Thu"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -65,7 +65,7 @@ Last Saved: "Feb 04, 2025 Tue"
   - [[#project-management][Project Management]]
     - [[#skeltor][skeltor]]
   - [[#coding--programming][coding / Programming]]
-    - [[#iedit][iedit]]
+    - [[#iedit-and-whole-word-select][iedit and whole word select]]
     - [[#git-helpers][git-helpers]]
     - [[#company][company]]
     - [[#gist-managment---notused][gist managment - NotUsed]]
@@ -1838,9 +1838,12 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
 ;; (use-package! skeletor)  ;;not using now
 
 ** coding / Programming
-*** iedit
+*** iedit and whole word select
 #+begin_src emacs-lisp
 (global-set-key (kbd "C-M-i") 'iedit-mode)
+(add-hook! 'prog-mode-hook
+  (modify-syntax-entry ?- "w")
+  (modify-syntax-entry ?_ "w"))
 #+end_src
 *** git-helpers
 
@@ -1962,15 +1965,14 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
 
 #+begin_src emacs-lisp
 (setq yas-snippet-dirs
-      '("~/emacstools/snippets"                 ;; personal snippets
-        ))
+      '("~/emacstools/snippets")) ;; personal snippets
 
-(use-package ivy-yasnippet
-  :bind ("C-c y" . ivy-yasnippet))
+(map! :map org-mode-map
+     "C-c y" #'yas-expand
+     "C-c C-y" #'yas-insert-snippet)
 #+end_src
 
 #+RESULTS:
-: ivy-yasnippet
 
 *** personal info help pages
 
@@ -2542,9 +2544,10 @@ https://dangirsh.org/projects/doom-config.html#rust
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
+(setq my-work-proj-dir "c:/my/org-farm/work.ord/projects/")
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
-                                 (directory-files "c:/my/work/work-projects")))
+                                 (directory-files my-work-proj-dir)))
   (sort wiki-list 'string>))
 
 (defun my/open-work-project (work-proj-root-arg work-proj-name)
@@ -2555,7 +2558,7 @@ https://dangirsh.org/projects/doom-config.html#rust
     (message "project not found %s" work-proj-root-arg)))
 
 (defun my/pick-work-projects-name-action (x)
-  (my/open-work-project "C:/my/work/work-projects" x))
+  (my/open-work-project my-work-proj-dir x))
 
 (defun my/pick-work-projects-name ()
   "pick a wiki from dropbox folder."
@@ -2570,7 +2573,7 @@ https://dangirsh.org/projects/doom-config.html#rust
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
   (let* ((project (read-from-minibuffer "Project name: "))
-         (project_extension (completing-read "Directory Extension: " '("work-project" "team-mates" "simple-todo" "meetings")))
+         (project_extension (completing-read "Directory Extension: " '("project" "task" "tmp" "thoughts")))
          (date-stamp (format-time-string "%Y-%m-%d"))
          (project-dir (concat (file-name-as-directory root-dir) date-stamp "-"
                               (replace-regexp-in-string "[^[:alnum:]]" "-"
@@ -2584,13 +2587,12 @@ https://dangirsh.org/projects/doom-config.html#rust
     (save-buffer)))
 (defun my/create-projects-wrapper()
   (interactive)
-  (my/create-projects "c:/my/work/work-projects"))
+  (my/create-projects my-work-proj-dir))
 
 (map! :leader
       :desc "create or open projects"
       "<f2> c" #'my/create-projects-wrapper
-      "<f2> o" #'my/pick-work-projects-name
-      )
+      "<f2> o" #'my/pick-work-projects-name)
 #+end_src
 
 #+RESULTS:
@@ -2979,7 +2981,10 @@ TODO: Should copy general package configs to simplify keybindings.
 
 (defun my/open/work-org-repo ()
   (interactive)
+  (delete-other-windows)
   (find-file "c:/my/org-farm/work.ord/tasks/my-tasks.org")
+  (split-window-right)
+  (find-file "c:/my/org-farm/work.ord/tasks/my-tasks-journal.org")
   (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
 
 (defun my/open/quick-notes ()
