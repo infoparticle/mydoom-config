@@ -759,6 +759,38 @@ context.  When called with an argument, unconditionally call
                                 (t #'org-insert-heading)))))
 (advice-add 'org-meta-return :override #'modi/org-meta-return)
 
+(after! perspective
+ (setq persp-mode-prefix-key (kbd "C-c p"))
+ ;; Because we're not savages who lose their workspaces
+ (setq persp-state-default-file (expand-file-name "perspective-state" doom-cache-dir)))
+
+(use-package! eyebrowse
+  :init
+  (eyebrowse-mode t)
+  :config
+  (setq eyebrowse-new-workspace t)
+  (setq eyebrowse-wrap-around t)
+  (map! :leader
+        (:prefix ("w" . "windows/workspaces")
+         :desc "Switch to config 1" "1" #'eyebrowse-switch-to-window-config-1
+         :desc "Switch to config 2" "2" #'eyebrowse-switch-to-window-config-2
+         :desc "Switch to config 3" "3" #'eyebrowse-switch-to-window-config-3
+         :desc "Switch to config 4" "4" #'eyebrowse-switch-to-window-config-4
+         :desc "Create workspace" "c" #'eyebrowse-create-window-config
+         :desc "Next workspace" "n" #'eyebrowse-next-window-config
+         :desc "Prev workspace" "p" #'eyebrowse-prev-window-config
+         :desc "Close workspace" "k" #'eyebrowse-close-window-config)))
+
+;; in your personal keybinding kingdom
+(map! :leader
+     (:prefix ("p" . "project/perspective") ; SPC p for the win
+      :desc "Switch perspective" "s" #'persp-switch
+      :desc "Switch buffer" "b" #'persp-switch-buffer
+      :desc "Kill perspective" "k" #'persp-kill
+      :desc "Rename perspective" "r" #'persp-rename
+      :desc "Save perspectives" "S" #'persp-state-save
+      :desc "Load perspectives" "L" #'persp-state-load))
+
 (require 'key-chord)
 
 (key-chord-define-global "BB" 'iswitchb)
@@ -1867,6 +1899,7 @@ Returns the CUSTOM_ID if found, otherwise nil."
       "0" #'my/open/config-org
       "1" #'my/open/work-org-repo
       "2" #'my/open/quick-notes
+      "<f2>1" #'my/open/work-org-rep
       )
 
 (with-system windows-nt
