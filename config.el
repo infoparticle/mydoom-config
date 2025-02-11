@@ -59,10 +59,9 @@
 ;;         hl-sexp-foreground-color "#00253c" ;;light yellow
 
 (with-system windows-nt
-  (set-selection-coding-system 'utf-8)
+  (set-selection-coding-system 'utf-16-le)
   (set-default-coding-systems 'utf-8)
-  (set-language-environment "UTF-8")
-  )
+  (set-language-environment "UTF-8"))
 
 (setq initial-major-mode 'org-mode)  ; *scratch* will be in org-mode!
 (setq make-backup-files nil) ; stop creating backup~ files
@@ -1901,6 +1900,8 @@ Returns the CUSTOM_ID if found, otherwise nil."
       "2" #'my/open/quick-notes
       "<f2>1" #'my/open/work-org-rep
       )
+
+(load (expand-file-name "emops/core.el" doom-user-dir))
 
 (with-system windows-nt
   (progn
