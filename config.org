@@ -56,6 +56,7 @@ Last Saved: "Feb 20, 2025 Thu"
     - [[#sidebar][sidebar]]
     - [[#speed-type][speed-type]]
     - [[#multiple-cursors][multiple-cursors]]
+    - [[#ssh][ssh]]
     - [[#eshell][eshell]]
     - [[#hyperbole---disabled][hyperbole - disabled!]]
   - [[#ui-stuff][UI Stuff]]
@@ -1670,6 +1671,13 @@ https://protesilaos.com/emacs/denote#h:f3bdac2c-4704-4a51-948c-a789a2589790
 #+begin_src emacs-lisp
 (use-package! evil-mc)
 #+end_src
+
+
+*** ssh
+#+BEGIN_SRC emacs-lisp
+(when (file-exists-p "c:/opt/putty/plink.exe")
+  (setq exec-path (append '("C:/opt/putty") exec-path)))
+#+END_SRC
 
 *** eshell
 

@@ -1029,6 +1029,9 @@ context.  When called with an argument, unconditionally call
 
 (use-package! evil-mc)
 
+(when (file-exists-p "c:/opt/putty/plink.exe")
+  (setq exec-path (append '("C:/opt/putty") exec-path)))
+
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
