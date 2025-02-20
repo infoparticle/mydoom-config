@@ -215,8 +215,10 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (dot . t)
 (restclient . t)
 (mermaid . t)
+(clojure . t)
 (powershell . t)
 (sql . t)))
+
 (setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 (setq ob-mermaid-cli-path "C:/Users/gopinat/AppData/Roaming/npm/mmdc.cmd")
 
@@ -226,6 +228,10 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (use-package! org-auto-tangle
   :defer 3
   :hook (org-mode . org-auto-tangle-mode))
+
+;; Add keybinding for executing code blocks in normal mode
+(map! :map org-mode-map
+      :n "M-RET" #'org-babel-execute-src-block)
 
 (setq my-org-todo-file "~/org/orgagenda/todo.org")
 (setq my-org-ws-meetings-file "c:/ws/meetings/meetings.org")
@@ -1135,10 +1141,13 @@ context.  When called with an argument, unconditionally call
       :desc "Pick an info file"
       "o i" #'my/pick-infodir-name)
 
+(load "~/emacstools/bb-codegen/emacs-bb.el")
+
 (setq yas-snippet-dirs
       '("~/emacstools/snippets")) ;; personal snippets
 
 (map! :map org-mode-map
+     "C-c <tab>" #'yas-next-field
      "C-c y" #'yas-expand
      "C-c C-y" #'yas-insert-snippet)
 

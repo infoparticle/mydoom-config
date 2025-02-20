@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Feb 11, 2025 Tue"
+Last Saved: "Feb 20, 2025 Thu"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -72,6 +72,7 @@ Last Saved: "Feb 11, 2025 Tue"
     - [[#gist-managment---notused][gist managment - NotUsed]]
     - [[#highlight-symbols][highlight symbols]]
     - [[#managing-info-files][Managing info files]]
+    - [[#emacstoolsbb-codegen][emacstools/bb-codegen]]
     - [[#yas-snippet][yas-snippet]]
     - [[#personal-info-help-pages][personal info help pages]]
     - [[#python][python]]
@@ -398,8 +399,10 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 (dot . t)
 (restclient . t)
 (mermaid . t)
+(clojure . t)
 (powershell . t)
 (sql . t)))
+
 (setq org-plantuml-jar-path (expand-file-name "~/emacstools/.local/jars/plantuml.jar"))
 (setq ob-mermaid-cli-path "C:/Users/gopinat/AppData/Roaming/npm/mmdc.cmd")
 
@@ -411,6 +414,10 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
 (use-package! org-auto-tangle
   :defer 3
   :hook (org-mode . org-auto-tangle-mode))
+
+;; Add keybinding for executing code blocks in normal mode
+(map! :map org-mode-map
+      :n "M-RET" #'org-babel-execute-src-block)
 #+end_src
 
 **** literate programming on save hooks
@@ -1999,6 +2006,12 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
 
 #+results:
 : my/pick-infodir-name
+
+*** emacstools/bb-codegen
+#+BEGIN_SRC emacs-lisp
+(load "~/emacstools/bb-codegen/emacs-bb.el")
+#+END_SRC
+
 *** yas-snippet
 
 #+begin_src emacs-lisp
@@ -2006,6 +2019,7 @@ Other buffer group by `centaur-tabs-get-group-name' with project name."
       '("~/emacstools/snippets")) ;; personal snippets
 
 (map! :map org-mode-map
+     "C-c <tab>" #'yas-next-field
      "C-c y" #'yas-expand
      "C-c C-y" #'yas-insert-snippet)
 #+end_src
