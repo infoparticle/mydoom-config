@@ -1680,7 +1680,7 @@ current buffer is saved."
              (buffer-modified-p))  ; Only if buffer is modified
     (org-set-property "UPDATED" (format-time-string "%Y-%m-%d %H:%M:%S"))))
 
-(add-hook 'before-save-hook 'zk/update-timestamp)
+;(add-hook 'before-save-hook 'zk/update-timestamp)
 
 
 (defun zk/get-id-by-title (title)

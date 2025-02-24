@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Feb 20, 2025 Thu"
+Last Saved: "Feb 21, 2025 Fri"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -2778,7 +2778,7 @@ https://dangirsh.org/projects/doom-config.html#rust
              (buffer-modified-p))  ; Only if buffer is modified
     (org-set-property "UPDATED" (format-time-string "%Y-%m-%d %H:%M:%S"))))
 
-(add-hook 'before-save-hook 'zk/update-timestamp)
+;(add-hook 'before-save-hook 'zk/update-timestamp)
 
 
 (defun zk/get-id-by-title (title)
