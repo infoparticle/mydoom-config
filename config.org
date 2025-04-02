@@ -4,7 +4,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+auto_tangle: t
-Last Saved: "Feb 21, 2025 Fri"
+Last Saved: "Mar 26, 2025 Wed"
 
 *** Table of contents                             :TOC_7:
 - [[#my-config][My Config]]
@@ -23,7 +23,6 @@ Last Saved: "Feb 21, 2025 Fri"
       - [[#literate-programming-on-save-hooks][literate programming on save hooks]]
     - [[#org-captures][org captures]]
       - [[#old-code][old code]]
-      - [[#actual-code-for-org-captures][actual code for org captures]]
     - [[#org-agenda][org-agenda]]
       - [[#org-agenda-keywords][org-agenda keywords]]
       - [[#org-cyrpt][org cyrpt]]
@@ -58,7 +57,7 @@ Last Saved: "Feb 21, 2025 Fri"
     - [[#multiple-cursors][multiple-cursors]]
     - [[#ssh][ssh]]
     - [[#eshell][eshell]]
-    - [[#hyperbole---disabled][hyperbole - disabled!]]
+    - [[#hyperbole][hyperbole!]]
   - [[#ui-stuff][UI Stuff]]
     - [[#all-the-icons][all-the-icons]]
     - [[#centaur-tab---disabled][centaur tab - disabled]]
@@ -89,6 +88,7 @@ Last Saved: "Feb 21, 2025 Fri"
     - [[#rust-programming][rust programming]]
     - [[#lisp-programming][lisp programming]]
     - [[#rust-programming---rustic][rust programming - rustic]]
+    - [[#leet-code-the-way][leet-code the-way!]]
     - [[#devdocs---disabled][devdocs - disabled]]
   - [[#voidtools][Voidtools]]
   - [[#workflow-helpers][workflow helpers]]
@@ -542,30 +542,6 @@ https://github.com/pinetr2e/ob-napkin  # python wrapper for plantuml, nice but n
                                      :datetree t)
                                     ))
                         )))))
-**** actual code for org captures
-
-#+begin_src emacs-lisp
-(setq my-org-todo-file "~/org/orgagenda/todo.org")
-(setq my-org-ws-meetings-file "c:/ws/meetings/meetings.org")
-                                        ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
-                                        ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
-
-(defun my/org-capture-file-name ()
-  "Prompt for a file name with a timestamp."
-  (concat (format-time-string "c:/ws/quicknotes/%Y-%m-%d-")
-          (read-string "Title : ")
-          ".org"))
-(after! org
-  (setq org-capture-templates nil)
-  (add-to-list 'org-capture-templates
-               '("w" "Work" entry
-                 (file my/org-capture-file-name)
-                 "* %?"))
-  (add-to-list 'org-capture-templates
-               '("j" "Journal" entry
-                 (file "~/Dropbox/org/gtd/journal.org")
-                 "* TODO %?")))
-#+end_src
 
 *** org-agenda
 
@@ -1709,9 +1685,11 @@ any directory proferred by `consult-dir'."
 
 
 
-*** hyperbole - disabled!
+*** hyperbole!
 
+#+BEGIN_SRC emacs-lisp
 (use-package! hyperbole)
+#+END_SRC
 ** UI Stuff
 #+begin_src emacs-lisp
 ;(doom-themes-neotree-config)
@@ -2536,6 +2514,27 @@ https://dangirsh.org/projects/doom-config.html#rust
 #+results:
 : rk/rustic-mode-hook
 
+*** leet-code the-way!
+
+#+BEGIN_SRC emacs-lisp
+(setq  leet-daily-dir "c:/dev/leet/daily/")
+(setq  leet-source-dir "c:/dev/leet/source/")
+
+(defun leet/start-daily-practise()
+  (interactive)
+  (let* ((date-string (format-time-string "%Y-%m-%d"))
+         (title (completing-read "problem name : " nil nil nil "leetcode-practise"))
+         (file-name (concat leet-daily-dir date-string "-" title ".org")))
+    (delete-other-windows)
+    (find-file file-name)
+
+    ;; Insert template content
+    (insert (format "#+TITLE: %s\n" title))
+    (insert (format "#+DATE: %s\n" (format-time-string "%Y-%m-%d %H:%M")))
+
+    (split-window-right)
+    (find-file (concat leet-source-dir "start-here.org"))))
+#+END_SRC
 *** devdocs - disabled
 
 (use-package! devdocs
@@ -2604,7 +2603,7 @@ https://dangirsh.org/projects/doom-config.html#rust
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
-(setq my-work-proj-dir "c:/my/org-farm/work.ord/projects/")
+(setq my-work-proj-dir "c:/my/work/work.projects/")
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files my-work-proj-dir)))
@@ -2629,6 +2628,25 @@ https://dangirsh.org/projects/doom-config.html#rust
             :action #'my/pick-work-projects-name-action
             :caller 'my/pick-work-projects-name))
 
+(defun my/create-an-entry-in-org-roam (project-name file-path)
+  "Insert an entry for PROJECT-NAME with FILE-PATH into active-projects.org, using Org properties."
+  (let ((active-projects-path "c:/my/org-farm/work.ord/projects/active-projects.org")
+        (status "In Progress")
+        (created-date (format-time-string "[%Y-%m-%d %a]")))
+    (with-temp-buffer
+      ;; Read the existing file
+      (insert-file-contents active-projects-path)
+      ;; Move to end of file
+      (goto-char (point-max))
+      ;; Insert new entry with Org properties
+      (insert (format "\n* [[file:%s][%s]]\n" file-path project-name))
+      (insert ":PROPERTIES:\n")
+      (insert (format ":STATUS: %s\n" status))
+      (insert (format ":CREATED: %s\n" created-date))
+      (insert ":END:\n")
+      ;; Write back to file
+      (write-region (point-min) (point-max) active-projects-path))))
+
 (defun my/create-projects (root-dir)
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
@@ -2643,8 +2661,10 @@ https://dangirsh.org/projects/doom-config.html#rust
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))
+    (my/create-an-entry-in-org-roam project file-path)
     (find-file file-path)
     (save-buffer)))
+
 (defun my/create-projects-wrapper()
   (interactive)
   (my/create-projects my-work-proj-dir))
@@ -3039,24 +3059,28 @@ TODO: Should copy general package configs to simplify keybindings.
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
-(defun my/open/work-org-repo ()
+(defun my/open/work-org-repo-projects-view ()
   (interactive)
   (delete-other-windows)
   (find-file "c:/my/org-farm/work.ord/tasks/my-tasks.org")
   (split-window-right)
-  (find-file "c:/my/org-farm/work.ord/tasks/my-tasks-journal.org")
+  (find-file "c:/my/org-farm/work.ord/projects/active-projects.org")
   (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
 
-(defun my/open/quick-notes ()
+(defun my/open/work-org-repo-review-view ()
   (interactive)
+  (delete-other-windows)
+  (find-file "c:/my/org-farm/work.ord/review/weekly-review.org")
   (split-window-right)
-  (find-file "c:/ws/quicknotes/quicknotes-index.org"))
+  (find-file "c:/my/org-farm/work.ord/projects/active-projects.org")
+  (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
+
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
-      "1" #'my/open/work-org-repo
-      "2" #'my/open/quick-notes
+      "1" #'my/open/work-org-repo-projects-view
+      "2" #'my/open/work-org-repo-review-view
       "<f2>1" #'my/open/work-org-rep
       )
 

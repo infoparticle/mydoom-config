@@ -233,27 +233,6 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 (map! :map org-mode-map
       :n "M-RET" #'org-babel-execute-src-block)
 
-(setq my-org-todo-file "~/org/orgagenda/todo.org")
-(setq my-org-ws-meetings-file "c:/ws/meetings/meetings.org")
-                                        ;(setq life-agenda-file "~/org/orgagenda/life-inbox.org")
-                                        ;(setq work-agenda-file "~/org/orgagenda/work-inbox.org")
-
-(defun my/org-capture-file-name ()
-  "Prompt for a file name with a timestamp."
-  (concat (format-time-string "c:/ws/quicknotes/%Y-%m-%d-")
-          (read-string "Title : ")
-          ".org"))
-(after! org
-  (setq org-capture-templates nil)
-  (add-to-list 'org-capture-templates
-               '("w" "Work" entry
-                 (file my/org-capture-file-name)
-                 "* %?"))
-  (add-to-list 'org-capture-templates
-               '("j" "Journal" entry
-                 (file "~/Dropbox/org/gtd/journal.org")
-                 "* TODO %?")))
-
 (global-set-key (kbd "C-c a") 'org-agenda-list)
 (global-set-key (kbd "M-,") 'execute-extended-command)
 
@@ -1032,6 +1011,8 @@ context.  When called with an argument, unconditionally call
 (when (file-exists-p "c:/opt/putty/plink.exe")
   (setq exec-path (append '("C:/opt/putty") exec-path)))
 
+(use-package! hyperbole)
+
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
 
@@ -1473,6 +1454,24 @@ current buffer is saved."
   (when buffer-file-name
     (setq-local buffer-save-without-query t)))
 
+(setq  leet-daily-dir "c:/dev/leet/daily/")
+(setq  leet-source-dir "c:/dev/leet/source/")
+
+(defun leet/start-daily-practise()
+  (interactive)
+  (let* ((date-string (format-time-string "%Y-%m-%d"))
+         (title (completing-read "problem name : " nil nil nil "leetcode-practise"))
+         (file-name (concat leet-daily-dir date-string "-" title ".org")))
+    (delete-other-windows)
+    (find-file file-name)
+
+    ;; Insert template content
+    (insert (format "#+TITLE: %s\n" title))
+    (insert (format "#+DATE: %s\n" (format-time-string "%Y-%m-%d %H:%M")))
+
+    (split-window-right)
+    (find-file (concat leet-source-dir "start-here.org"))))
+
 (with-eval-after-load 'counsel
   (when (eq system-type 'windows-nt)
     (setq counsel-locate-cmd 'counsel-locate-cmd-es)
@@ -1522,7 +1521,7 @@ current buffer is saved."
             :action #'my/pick-wiki-name-action
             :caller 'my/pick-wiki-name))
 
-(setq my-work-proj-dir "c:/my/org-farm/work.ord/projects/")
+(setq my-work-proj-dir "c:/my/work/work.projects/")
 (defun my/pick-work-projects-name-action-list-candidates (str pred _)
   (setq wiki-list  (cl-delete-if (lambda (k) (string-match-p "^\\." k))
                                  (directory-files my-work-proj-dir)))
@@ -1547,6 +1546,25 @@ current buffer is saved."
             :action #'my/pick-work-projects-name-action
             :caller 'my/pick-work-projects-name))
 
+(defun my/create-an-entry-in-org-roam (project-name file-path)
+  "Insert an entry for PROJECT-NAME with FILE-PATH into active-projects.org, using Org properties."
+  (let ((active-projects-path "c:/my/org-farm/work.ord/projects/active-projects.org")
+        (status "In Progress")
+        (created-date (format-time-string "[%Y-%m-%d %a]")))
+    (with-temp-buffer
+      ;; Read the existing file
+      (insert-file-contents active-projects-path)
+      ;; Move to end of file
+      (goto-char (point-max))
+      ;; Insert new entry with Org properties
+      (insert (format "\n* [[file:%s][%s]]\n" file-path project-name))
+      (insert ":PROPERTIES:\n")
+      (insert (format ":STATUS: %s\n" status))
+      (insert (format ":CREATED: %s\n" created-date))
+      (insert ":END:\n")
+      ;; Write back to file
+      (write-region (point-min) (point-max) active-projects-path))))
+
 (defun my/create-projects (root-dir)
   "Create a file with date stamp and title as its name under the project directory and open it for editing."
   (interactive "DDirectory: ")
@@ -1561,8 +1579,10 @@ current buffer is saved."
          (file-path (concat (file-name-as-directory project-dir) file-name)))
     (unless (file-directory-p project-dir)
       (make-directory project-dir))
+    (my/create-an-entry-in-org-roam project file-path)
     (find-file file-path)
     (save-buffer)))
+
 (defun my/create-projects-wrapper()
   (interactive)
   (my/create-projects my-work-proj-dir))
@@ -1892,24 +1912,28 @@ Returns the CUSTOM_ID if found, otherwise nil."
   (split-window-right)
   (find-file "c:/my/work/gitrepos/rum-work-notes.git/contents/private/standups/this-month-standups.org"))
 
-(defun my/open/work-org-repo ()
+(defun my/open/work-org-repo-projects-view ()
   (interactive)
   (delete-other-windows)
   (find-file "c:/my/org-farm/work.ord/tasks/my-tasks.org")
   (split-window-right)
-  (find-file "c:/my/org-farm/work.ord/tasks/my-tasks-journal.org")
+  (find-file "c:/my/org-farm/work.ord/projects/active-projects.org")
   (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
 
-(defun my/open/quick-notes ()
+(defun my/open/work-org-repo-review-view ()
   (interactive)
+  (delete-other-windows)
+  (find-file "c:/my/org-farm/work.ord/review/weekly-review.org")
   (split-window-right)
-  (find-file "c:/ws/quicknotes/quicknotes-index.org"))
+  (find-file "c:/my/org-farm/work.ord/projects/active-projects.org")
+  (my/org-roam-switch-repo-by-path "c:/my/org-farm/work.ord"))
+
 
 (map! :leader
       :desc "Speed dial to to file"
       "0" #'my/open/config-org
-      "1" #'my/open/work-org-repo
-      "2" #'my/open/quick-notes
+      "1" #'my/open/work-org-repo-projects-view
+      "2" #'my/open/work-org-repo-review-view
       "<f2>1" #'my/open/work-org-rep
       )
 

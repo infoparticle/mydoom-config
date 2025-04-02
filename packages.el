@@ -139,7 +139,7 @@
 (package! emacsql)
 (package! emacsql-sqlite)
 ;;(package! hyperbole :disable t)
-;;(package! hyperbole)
+(package! hyperbole)
 ;;(package! denote)
 (package! dumb-jump)
 (package! citre)
