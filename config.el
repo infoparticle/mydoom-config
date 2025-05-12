@@ -225,6 +225,20 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
 ;; avoid tangling into dos eol in linux files edited using tramp
 (add-hook 'org-babel-pre-tangle-hook (lambda () (setq coding-system-for-write 'utf-8-unix)))
 
+(defun org-babel-copy-block ()
+  "Copy the current org-babel source block content to the kill ring."
+  (interactive)
+  (when (org-babel-get-src-block-info)
+    (let ((content (nth 1 (org-babel-get-src-block-info))))
+      (kill-new content)
+      (message "Source block copied to clipboard."))))
+
+
+(map! :leader
+      :map org-mode-map
+      :desc "screenshot for org-roam"
+      "m y b" #'org-babel-copy-block)
+
 (use-package! org-auto-tangle
   :defer 3
   :hook (org-mode . org-auto-tangle-mode))
@@ -245,29 +259,90 @@ time-stamp-pattern "34/\\(\\(L\\|l\\)ast\\( \\|-\\)\\(\\(S\\|s\\)aved\\|\\(M\\|m
                                 (todo . " %i %-12:c %-6e")
                                 (tags . " %i %-12:c")
                                 (search . " %i %-12:c")))
-(setq org-todo-keywords
-    (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
-            (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "MEETING" "EVENT"))))
 
-(setq org-todo-keyword-faces
-      (quote (("TODO"      :background "red" :foreground "white" :weight bold)
-              ("NEXT"      :background "slate blue" :foreground "white" :weight bold)
-              ("DONE"      :background "forest green" :foreground "white" :weight bold)
-              ("WAITING"   :background "orange" :foreground "white" :weight bold)
-              ("HOLD"      :background "magenta" :foreground "white" :weight bold)
-              ("CANCELLED" :background "forest green" :foreground "white" :weight bold)
-              ("MEETING"   :background "forest green" :foreground "white" :weight bold)
-              ("EVENT"     :background "black" :foreground "white" :weight bold)
-              )))
+;; Define TODO keyword sets for Tasks and Projects
+(setq org-todo-keywords
+      '(;; Task Workflow: BACKLOG -> TODO -> DOING -> DONE (with BLOCKED state)
+        (type "TASK" ; Name of the type
+              "BACKLOG(b)" ; Starting state (b is fast access key C-c C-t b)
+              "TODO(t)"    ; Groomed state (t is fast access key C-c C-t t)
+              "DOING(i)"   ; In progress state (i is fast access key C-c C-t i)
+              "BLOCKED(l)" ; Blocked state (l is fast access key C-c C-t l)
+              "|"          ; Separator for done states
+              "DONE(d)")   ; Final done state (d is fast access key C-c C-t d)
+
+        ;; Project Workflow: BACKLOG -> ACTIVE -> HOLD -> DONE -> ARCHIVED
+        (type "PROJ" ; Name of the type
+              "BACKLOG(B)" ; Project backlog state (B is fast access key C-c C-t B)
+              "ACTIVE(A)"  ; Project is active (A is fast access key C-c C-t A)
+              "HOLD(H)"    ; Project is on hold (H is fast access key C-c C-t H)
+              "|"          ; Separator for done states
+              "DONE(D)"    ; Project completed (D is fast access key C-c C-t D)
+              "ARCHIVED(R)") ; Project archived (R is fast access key C-c C-t R)
+        ))
+
+;; Define faces (colors/styles) for TODO keywords according to user preference
+;; note, using org-todo-keyword-faces won't work, org-modern overrides them!
+(setq org-modern-todo-faces
+      '(
+        ("ACTIVE"   . (:background "dark blue" :foreground "white" :weight bold))
+        ("BLOCKED"  . (:background "dark red" :foreground "white" :weight bold))
+        ("HOLD"     . (:background "dark red" :foreground "white" :weight bold))
+        ("TODO"     . (:background "purple" :foreground "white" :weight bold))
+        ("DOING"    . (:background "yellow" :foreground "black" :weight bold))
+        ("DONE"     . (:background "dark green" :foreground "white" :weight bold))
+        ("BACKLOG"  . (:foreground "gray" :weight bold))
+        ("ARCHIVED" . (:foreground "dim gray" :weight normal))
+       ))
+;; Ensure Org agenda uses the new keywords correctly
+;; (This usually works automatically, but explicit setting can help)
+;; (setq org-agenda-todo-ignore-scheduled 'future)
+;; (setq org-agenda-todo-ignore-deadlines 'future)
+;; (setq org-agenda-todo-ignore-with-date t) ; Don't show done items with dates unless specified
+
 (setq org-todo-state-tags-triggers
-    (quote (("CANCELLED" ("CANCELLED" . t))
-            ("WAITING" ("WAITING" . t))
-            ("HOLD" ("WAITING") ("HOLD" . t))
-            (done ("WAITING") ("HOLD"))
-            ("TODO" ("WAITING") ("CANCELLED") ("HOLD"))
-            ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
-            ("EVENT" ("WAITING") ("CANCELLED") ("HOLD"))
-            ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
+      '(
+        ;; --- TASK State Triggers ---
+
+        ;; When a task becomes BLOCKED, add a 'needs_attention' tag.
+        ("BLOCKED" . (("needs_attention" . t)))
+
+        ;; When a task leaves the BLOCKED state (goes to TODO, DOING, or DONE),
+        ;; remove the 'needs_attention' tag.
+        ((not "BLOCKED") . (("needs_attention" . nil)))
+
+        ;; When starting work on a task (moving to DOING), add an 'active' tag.
+        ("DOING" . (("active" . t)))
+
+        ;; When a task is no longer being actively worked on (moving out of DOING),
+        ;; remove the 'active' tag. This covers moving to BLOCKED, DONE, or back to TODO.
+        ((not "DOING") . (("active" . nil)))
+
+        ;; When a task is marked DONE, add a 'completed' tag and remove 'active'/'needs_attention'
+        ;; (The removal might be redundant due to the (not ...) triggers above,
+        ;; but explicit removal on DONE can be clearer).
+        ("DONE" . (("completed" . t) ("active" . nil) ("needs_attention" . nil)))
+
+
+        ;; --- PROJ State Triggers ---
+
+        ;; When a project becomes ACTIVE, add a 'current' tag.
+        ("ACTIVE" . (("current" . t)))
+
+        ;; When a project is no longer ACTIVE (moves to HOLD, DONE, ARCHIVED),
+        ;; remove the 'current' tag.
+        ((not "ACTIVE") . (("current" . nil)))
+
+        ;; When a project is put on HOLD, add a 'paused' tag.
+        ("HOLD" . (("paused" . t)))
+
+        ;; When a project leaves the HOLD state, remove the 'paused' tag.
+        ((not "HOLD") . (("paused" . nil)))
+
+        ;; When a project is ARCHIVED, add an 'archived_project' tag and remove others.
+        ("ARCHIVED" . (("archived_project" . t) ("current" . nil) ("paused" . nil)))
+
+       ))
 
 (setq
  cfw:display-calendar-holidays nil ;don't process holidays.el and clutter the agenda
@@ -517,6 +592,20 @@ a separator ' -> '."
         (make-directory org-attach-id-dir t))
       (org-roam-db-sync)
       (message "Switched to Org Roam Repo: %s" selected-repo)))
+
+  (defun my/org-roam-switch-repo-and-find-node ()
+    "Switch to org-roam repo and find node"
+    (interactive)
+    (let* ((repos (directory-files org-roam-farm-path nil "^[^.]"))
+           (selected-repo (completing-read "Select Org Roam Repo: " repos)))
+      (setq org-roam-directory (expand-file-name selected-repo org-roam-farm-path))
+      (setq org-attach-id-dir (expand-file-name ".attach" org-roam-directory))
+      (unless (file-exists-p org-attach-id-dir)
+        (make-directory org-attach-id-dir t))
+      ;;(org-roam-db-sync)
+      (message "Switched to Org Roam Repo: %s" selected-repo))
+    (org-roam-node-find))
+  (map! "<f1>" #'my/org-roam-switch-repo-and-find-node)
 
   (map! :leader
         :desc "screenshot for org-roam"
@@ -923,9 +1012,10 @@ context.  When called with an argument, unconditionally call
 (setq dired-listing-switches "-hal")
 (setq dired-recursive-copies (quote always)) ;no asking
 (setq dired-recursive-deletes 'top) ; ask once
-(setq diredp-hide-details-initially-flag nil)
 (setq ls-lisp-dirs-first t)
+(setq ls-lisp-sort-reverse t)
 
+(add-hook 'dired-mode-hook #'dired-hide-details-mode)
 (with-eval-after-load 'dired
   (defun xah-dired-mode-setup ()
     "to be run as hook for `dired-mode'."
@@ -1010,8 +1100,6 @@ context.  When called with an argument, unconditionally call
 
 (when (file-exists-p "c:/opt/putty/plink.exe")
   (setq exec-path (append '("C:/opt/putty") exec-path)))
-
-(use-package! hyperbole)
 
 ;(doom-themes-neotree-config)
 ;(setq doom-themes-neotree-file-icons t)
@@ -1866,37 +1954,6 @@ Returns the CUSTOM_ID if found, otherwise nil."
       (goto-char (point-min))
       (while (search-forward "\\" nil t)
         (replace-match "/" nil t)))))
-
-(setq myvar/rum-work-notes-path "c:/my/work/gitrepos/rum-work-notes.git/")
-
-(defun my/work/open-file-in-sidebar (it)
-  (split-window-right)
-  (find-file (concat myvar/rum-work-notes-path it)))
-
-(defun my/work/open-todo ()
-  (interactive)
-  (my/work/open-file-in-sidebar "contents/private/todo-for-today.org"))
-
-(bind-key  "\C-cwot"  'my/work/open-todo)
-
-(defun my/work/open-bookmarks ()
-  (interactive)
-  (my/work/open-file-in-sidebar "contents/bookmarks.org"))
-
-(bind-key  "\C-cwob"  'my/work/open-bookmarks)
-
-
-(defun my/work/task/create ()
-  (interactive)
-  (setq myvar/task-dir
-        (concat (my/clean-spaces-from-path
-                 (read-string "Enter Task for the day :"
-                              (concat (format-time-string "%Y-%m-%d-")) nil  nil))
-                ".task/"))
-  (make-directory (concat myvar/rum-work-notes-path "contents/internal/tasks/" myvar/task-dir) :parents)
-  (find-file (concat myvar/rum-work-notes-path "contents/internal/tasks/" myvar/task-dir "index.org")))
-
-(bind-key  "\C-cwtc"  'my/work/task/create)
 
 (defun my/load-helpers()
   (interactive)

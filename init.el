@@ -156,9 +156,10 @@
        ;;plantuml          ; diagrams for confusing people more
        (purescript +lsp)   ; javascript, but functional
        (python             ; beautiful is better than ugly
-        +lsp
-        +conda
-        +pyright)
+        ;; +lsp
+        ;; +conda
+        ;; +pyright
+        )
        ;;qt                ; the 'cutest' gui framework ever
        ;;racket            ; a DSL for DSLs
        ;;raku              ; the artist formerly known as perl6
